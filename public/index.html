@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#191919" media="(prefers-color-scheme: dark)">
+  <title>N-Translator（対面翻訳 for Notion）</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-view="log">
+  <section id="launcher" class="launcher" hidden>
+    <div class="launcher-card">
+      <span class="launcher-icon" aria-hidden="true">🗣️</span>
+      <div class="launcher-text">
+        <p class="launcher-title">N-Translator<span class="launcher-sub">対面翻訳 for Notion</span></p>
+        <p id="launchNote" class="launcher-note">日本語 ⇄ 英語・中国語など60言語・押すと翻訳画面が開きます（iPhoneはSafari）</p>
+      </div>
+      <a id="launchLink" class="start-btn" target="_blank" rel="noopener"><span class="rec-dot" aria-hidden="true"></span>翻訳をはじめる</a>
+    </div>
+  </section>
+
+  <header class="topbar">
+    <div class="crumb"><span aria-hidden="true">🗣️</span>N-Translator</div>
+    <button id="menuBtn" class="icon-btn" aria-label="表示の設定" aria-haspopup="true" aria-expanded="false">
+      <svg class="ico fill" viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>
+    </button>
+    <div id="menu" class="menu" hidden>
+      <div class="menu-row">
+        <span>文字の大きさ</span>
+        <span class="stepper">
+          <button id="fontDown" aria-label="文字を小さく">−</button>
+          <span id="fontSize">100%</span>
+          <button id="fontUp" aria-label="文字を大きく">＋</button>
+        </span>
+      </div>
+      <button id="termsMenu" class="menu-row menu-item">用語を編集</button>
+      <button id="deviceMenu" class="menu-row menu-item">別の端末を登録</button>
+      <div class="menu-row menu-note">
+        <span>音声の送り方</span>
+        <span id="codecLabel">開始すると決まります</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 登録済みの端末から、別の端末を登録するリンクを渡す（リンクの中身＝キーは画面に出さない） -->
+  <dialog id="deviceDialog" class="sheet" aria-labelledby="deviceTitle">
+    <h2 id="deviceTitle" class="sheet-title">別の端末を登録</h2>
+    <p>このリンクを別の端末（自分のiPhone・iPad・Macなど）のブラウザで開くと、その端末でも使えるようになります。</p>
+    <p class="sheet-warn">リンクを知っている人は誰でも使えてしまいます。自分の端末にだけ渡し、メッセージなどに残さないでください。</p>
+    <p id="deviceStatus" class="sheet-status" role="status" hidden></p>
+    <div class="sheet-actions">
+      <button id="deviceClose" class="sheet-btn">閉じる</button>
+      <button id="deviceShare" class="sheet-btn" hidden>共有…</button>
+      <button id="deviceCopy" class="sheet-btn primary">リンクをコピー</button>
+    </div>
+  </dialog>
+
+  <main class="page">
+    <div class="page-icon" aria-hidden="true">🗣️</div>
+    <h1 class="page-title">N-Translator</h1>
+    <p class="page-sub">対面翻訳 for Notion</p>
+
+    <div class="props">
+      <div class="prop">
+        <div class="prop-name"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.8 1.7 2.7 3.8 2.7 6.2S9.8 12.5 8 14.2C6.2 12.5 5.3 10.4 5.3 8S6.2 3.5 8 1.8z"/></svg>言語</div>
+        <div class="prop-value lang-pair">
+          <label class="lang-pick"><span class="lang-current"></span><select class="lang-select" data-role="me" aria-label="自分の言語"></select></label>
+          <button id="langSwap" class="icon-btn" aria-label="自分と相手の言語を入れ替える">
+            <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5h10M10.5 3 13 5.5 10.5 8M13 10.5H3M5.5 8 3 10.5 5.5 13"/></svg>
+          </button>
+          <label class="lang-pick"><span class="lang-current"></span><select class="lang-select" data-role="partner" aria-label="相手の言語"></select></label>
+        </div>
+      </div>
+      <div class="prop">
+        <div class="prop-name"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="2.2" class="dot"/></svg>状態</div>
+        <div class="prop-value"><span id="status" class="status" data-state="idle">待機中</span></div>
+      </div>
+      <div class="prop">
+        <div class="prop-name"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="9" r="5.3"/><path d="M8 9V6.3M6.4 1.8h3.2"/></svg>経過</div>
+        <div class="prop-value" id="elapsed">0:00</div>
+      </div>
+      <div class="prop">
+        <div class="prop-name"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5l3 3v9.4H4z"/><path d="M9 1.8v3h3M6 8.5h4M6 11h4"/></svg>記録</div>
+        <div class="prop-value" id="record"></div>
+      </div>
+    </div>
+
+    <details id="terms" class="toggle">
+      <summary>用語<span class="muted">（人名・社内用語・訳し方の固定）</span></summary>
+      <div class="toggle-body">
+        <textarea id="termsInput" rows="4" placeholder="山田&#10;Acme社&#10;議事録 = meeting minutes"></textarea>
+        <p class="hint">1行に1つ。「日本語 = English」と書くと訳し方も固定できます。次に開始・再開したときから反映されます。</p>
+        <details class="toggle builtin">
+          <summary>最初から登録済みの語句<span id="builtinCount" class="muted"></span></summary>
+          <div class="toggle-body">
+            <p class="hint">製品名は訳しても英字のまま残します（カタカナで言っても英字にそろえます）。</p>
+            <p id="builtinTerms" class="hint"></p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <div id="notice" class="notice" hidden>
+      <span id="noticeIcon" class="notice-icon" aria-hidden="true">⚠️</span>
+      <p id="noticeText" class="notice-text"></p>
+      <button id="noticeClose" class="icon-btn" aria-label="閉じる">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <!-- まだ登録されていない端末で、アクセスキーを入力して登録する -->
+    <form id="keyForm" class="key-form" hidden>
+      <label for="keyInput" class="key-label">アクセスキー</label>
+      <div class="key-row">
+        <input id="keyInput" name="access-key" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="公開するときに決めたキー">
+        <button type="submit" class="sheet-btn primary">登録</button>
+      </div>
+      <p id="keyError" class="key-error" role="alert" hidden></p>
+    </form>
+
+    <nav class="tabs" role="tablist" aria-label="表示">
+      <button class="tab" role="tab" data-view="log">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>ログ
+      </button>
+      <button class="tab" role="tab" data-view="columns">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M8 2.5v11"/></svg>2列
+      </button>
+      <button class="tab" role="tab" data-view="face">
+        <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 13V3M2.8 5.2 5 3l2.2 2.2M11 3v10M8.8 10.8 11 13l2.2-2.2"/></svg>対面
+      </button>
+    </nav>
+
+    <section id="log" class="log">
+      <p class="empty">下の「翻訳を開始」を押して話しはじめると、ここに原文と訳文が出ます。</p>
+    </section>
+
+    <section id="columns" class="columns">
+      <div class="col" data-role="me">
+        <div class="col-head"><label class="lang-pick"><span class="lang-current"></span><select class="lang-select" data-role="me" aria-label="自分の言語"></select></label></div>
+        <div class="col-body"><div class="col-list"></div></div>
+      </div>
+      <div class="face-mid" aria-hidden="true"></div>
+      <div class="col" data-role="partner">
+        <div class="col-head"><label class="lang-pick" data-show="native"><span class="lang-current"></span><select class="lang-select" data-role="partner" aria-label="相手の言語"></select></label></div>
+        <div class="col-body"><div class="col-list"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="dock" class="dock"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

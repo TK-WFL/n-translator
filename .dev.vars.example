@@ -1,0 +1,14 @@
+# 「Deploy to Cloudflare」の画面で入力する値です（このファイルには書き込まないでください）。
+# ローカルで動かすときは、このファイルを .dev.vars（Cloudflare 版）または .env（node server.mjs）にコピーして値を書きます。
+
+# Soniox の API キー（https://console.soniox.com で発行）
+SONIOX_API_KEY=
+
+# 翻訳画面を開くための合言葉。自分で決めます（20文字以上のランダムな文字列がおすすめ）
+ACCESS_KEY=
+
+# Notion インテグレーションのトークン（https://www.notion.so/profile/integrations で発行）
+NOTION_TOKEN=
+
+# 翻訳ログを作る Notion ページの URL（このページにインテグレーションを接続しておきます）
+NOTION_PARENT_PAGE=
