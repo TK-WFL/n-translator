@@ -5,7 +5,9 @@
 N-Translator listens to a face-to-face conversation on your iPhone, translates it both ways in real time, and writes the original and the translation into Notion as you speak.
 Put the Notion page on the meeting-room projector and everyone can follow the conversation live.
 
-![Left: the translation screen on iPhone (two-column view). Right: the Notion side-by-side table on the projector](docs/images/overview.jpg)
+![Left: the translation screen on iPhone (two-column view). Right: the Notion conversation page on the projector](docs/images/overview.jpg)
+
+▶ **[Watch the demo video (2:35, MP4, Japanese narration)](https://github.com/TK-WFL/n-translator/releases/download/v1.0.0/N-Translator_demo.mp4)** — what you say on the iPhone appears in Notion on the projector
 
 - **Two-way live translation** — the spoken language is detected automatically. Speak Japanese and it is translated into your partner's language, and vice versa
 - **60 languages** — Japanese ⇄ English by default. Choose any two of 60 languages, such as Chinese, Korean, Spanish or Vietnamese
