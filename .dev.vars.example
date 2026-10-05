@@ -1,14 +1,19 @@
 # 「Deploy to Cloudflare」の画面で入力する値です（このファイルには書き込まないでください）。
+# Values you enter on the "Deploy to Cloudflare" screen (do not write them in this file).
 # ローカルで動かすときは、このファイルを .dev.vars（Cloudflare 版）または .env（node server.mjs）にコピーして値を書きます。
 
-# Soniox の API キー（https://console.soniox.com で発行）
+# Soniox の API キー（https://console.soniox.com で発行）/ Soniox API key
 SONIOX_API_KEY=
 
 # 翻訳画面を開くための合言葉。自分で決めます（20文字以上のランダムな文字列がおすすめ）
+# A passphrase you choose to open the app (20+ random characters recommended)
 ACCESS_KEY=
 
-# Notion インテグレーションのトークン（https://www.notion.so/profile/integrations で発行）
+# Notion の内部接続（インテグレーション）の API トークン（ntn_ で始まる）
+# Notion internal connection API token (starts with ntn_)
 NOTION_TOKEN=
 
-# 翻訳ログを作る Notion ページの URL（このページにインテグレーションを接続しておきます）
-NOTION_PARENT_PAGE=
+# 記録先のページは、接続を追加したページが自動で使われます。複数のページに接続を追加した場合だけ、
+# Cloudflare の「変数とシークレット」に NOTION_PARENT_PAGE（ページの URL）を追加してください。
+# The log page is detected automatically (the page you added the connection to). Only if the connection
+# has access to several top-level pages, add NOTION_PARENT_PAGE (the page URL) in Cloudflare's "Variables and Secrets".

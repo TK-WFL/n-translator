@@ -84,7 +84,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "127.0.0.1", () => {
   const { SONIOX_API_KEY, NOTION_TOKEN, NOTION_PARENT_PAGE } = process.env;
+  const notionPage = NOTION_PARENT_PAGE ? "（記録先：NOTION_PARENT_PAGE）" : "（記録先：接続を追加したページを自動で使う）";
   console.log(`N-Translator: http://localhost:${PORT}`);
   console.log(`  Soniox: ${SONIOX_API_KEY ? "OK" : `未設定（デモのみ: http://localhost:${PORT}/?demo）`}`);
-  console.log(`  Notion: ${NOTION_TOKEN && NOTION_PARENT_PAGE ? "OK" : "未設定（画面表示のみ）"}`);
+  console.log(`  Notion: ${NOTION_TOKEN ? `OK${notionPage}` : "未設定（画面表示のみ）"}`);
 });

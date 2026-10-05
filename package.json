@@ -1,10 +1,15 @@
 {
   "name": "notion-live-translate",
+  "version": "1.0.0",
+  "description": "Face-to-face live translation on iPhone, logged to Notion (N-Translator)",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/*.test.mjs"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

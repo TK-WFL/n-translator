@@ -887,11 +887,36 @@ function setText(el, text, nf, placeholder = "") {
 }
 
 // ---- UI --------------------------------------------------------------------
-function showNotice(message, kind = "error") {
+function showNotice(message, kind = "error", link = null) {
   els.notice.hidden = false;
   els.notice.classList.toggle("info", kind === "info");
   els.noticeIcon.textContent = kind === "info" ? "💡" : "⚠️";
   els.noticeText.textContent = message;
+  if (link) {
+    const a = document.createElement("a");
+    a.href = link.href;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = link.label;
+    els.noticeText.append(" ", a);
+  }
+}
+
+// 記録先の Notion ページに、説明・「翻訳をはじめる」ボタン・翻訳ログをまとめて用意する（何度押しても増えない）
+async function setupNotionPage() {
+  if (!cfg.notion) {
+    showNotice("Notion が設定されていません（Cloudflare の「変数とシークレット」に NOTION_TOKEN を登録してください）。");
+    return;
+  }
+  showNotice("Notion のページを準備しています…", "info");
+  try {
+    const r = await api("/api/notion/setup", {});
+    const added = [r.addedButton && "説明と「翻訳をはじめる」ボタン", r.addedDatabase && "翻訳ログ"].filter(Boolean);
+    const message = added.length ? `Notion のページに${added.join("と")}を追加しました。` : "Notion のページはもう準備できています。";
+    showNotice(message, "info", { href: r.pageUrl, label: "Notion で開く ↗" });
+  } catch (e) {
+    showNotice(`Notion のページを準備できませんでした: ${e.message}`);
+  }
 }
 
 function hideNotice() {
@@ -1057,6 +1082,10 @@ if (EMBEDDED) {
     openDeviceDialog();
   });
   $("deviceClose").addEventListener("click", () => $("deviceDialog").close());
+  $("setupMenu").addEventListener("click", () => {
+    toggleMenu(false);
+    setupNotionPage();
+  });
   $("keyForm").addEventListener("submit", registerKey);
   $("deviceCopy").addEventListener("click", copyDeviceLink);
   $("deviceShare").addEventListener("click", shareDeviceLink);

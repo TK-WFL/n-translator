@@ -426,6 +426,7 @@ textarea:focus { outline: none; box-shadow: rgba(35, 131, 226, 0.57) 0 0 0 1px i
 .notice.info { background: var(--yellow-bg); }
 .notice-icon { font-size: 18px; line-height: 1.35; }
 .notice-text { flex: 1; margin: 0; font-size: 15px; }
+.notice-text a { color: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 
 /* アクセスキーの入力欄（まだ登録されていない端末） */
 .key-form { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--divider-strong); border-radius: 6px; }

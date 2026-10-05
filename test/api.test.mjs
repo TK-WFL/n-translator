@@ -338,3 +338,88 @@ test("知らない言語コードは使わない（見出しは日本語⇄英�
     assert.equal(callout.icon.emoji, "💬");
     assert.equal(callout.color, "gray_background");
   }));
+
+// ---- 記録先のページの自動判定と「Notionページを準備」 ------------------------------
+const TOP = uuid("8");
+const page = (id, parent, title = "") => ({
+  object: "page",
+  id,
+  parent,
+  properties: { title: { type: "title", title: [{ plain_text: title }] } },
+});
+const noParentEnv = { ...env, NOTION_PARENT_PAGE: "" };
+const callNoParent = (path, body) => handleApi(req(path, { body }), noParentEnv, opts);
+
+test("記録先のページ：NOTION_PARENT_PAGE がなければ、接続を追加したいちばん上のページを使う", () =>
+  withNotion(
+    {
+      override: (c) =>
+        c.method === "POST" && c.path === "/search"
+          ? [200, {
+              results: [
+                page(TOP, { type: "workspace", workspace: true }, "N-Translator"),
+                page(uuid("9"), { type: "page_id", page_id: TOP }, "子ページ"),
+                page(uuid("a"), { type: "database_id", database_id: "db" }, "会話の行"),
+              ],
+              has_more: false,
+            }]
+          : null,
+    },
+    async (calls) => {
+      const res = await callNoParent("/api/notion/session", { title: "会話", me: "ja", partner: "en" });
+      assert.equal(res.status, 200);
+      const db = calls.find((c) => c.method === "POST" && c.path === "/databases");
+      assert.equal(db.body.parent.page_id, TOP);
+    },
+  ));
+
+test("記録先のページ：接続を追加したページが複数あると、URL の設定を案内する", () =>
+  withNotion(
+    {
+      override: (c) =>
+        c.method === "POST" && c.path === "/search"
+          ? [200, { results: [page(TOP, { type: "workspace", workspace: true }, "A"), page(uuid("9"), { type: "workspace", workspace: true }, "B")], has_more: false }]
+          : null,
+    },
+    async () => {
+      const res = await callNoParent("/api/notion/session", { title: "会話" });
+      assert.equal(res.status, 400);
+      assert.match((await res.json()).error, /複数.*NOTION_PARENT_PAGE/);
+    },
+  ));
+
+test("Notionページを準備：説明と起動ボタン（キーなしのURL）と翻訳ログを作り、2回目は何も増やさない", async () => {
+  resetNotionCache();
+  const made = { embed: false, db: false };
+  const m = mockFetch((c) => {
+    if (c.method === "GET" && c.path.startsWith(`/blocks/${PARENT}/children`)) {
+      const results = [];
+      if (made.embed) results.push({ id: "e1", type: "embed", embed: { url: `${ORIGIN}/` } });
+      if (made.db) results.push({ id: "db-new", type: "child_database", child_database: { title: "翻訳ログ" } });
+      return [200, { results, has_more: false }];
+    }
+    if (c.method === "PATCH" && c.path === `/blocks/${PARENT}/children`) {
+      made.embed = true;
+      return [200, { results: [{ id: "c1" }, { id: "e1" }] }];
+    }
+    if (c.method === "POST" && c.path === "/databases") {
+      made.db = true;
+      return [200, { id: "db-new" }];
+    }
+    if (c.method === "GET" && c.path.startsWith("/databases/")) return [200, { properties: DEFAULT_PROPS }];
+    return [200, {}];
+  });
+  try {
+    const first = await (await call("/api/notion/setup", {})).json();
+    assert.deepEqual(first, { pageUrl: `https://www.notion.so/${PARENT}`, addedButton: true, addedDatabase: true });
+    const patch = m.calls.find((c) => c.method === "PATCH");
+    assert.deepEqual(patch.body.children.map((b) => b.type), ["callout", "embed"]);
+    assert.equal(patch.body.children[1].embed.url, `${ORIGIN}/`); // アクセスキーは URL に入れない
+    const before = m.calls.length;
+    const second = await (await call("/api/notion/setup", {})).json();
+    assert.deepEqual(second, { pageUrl: `https://www.notion.so/${PARENT}`, addedButton: false, addedDatabase: false });
+    assert.equal(m.calls.slice(before).filter((c) => c.method !== "GET").length, 0);
+  } finally {
+    m.restore();
+  }
+});
