@@ -1,0 +1,7 @@
+# Cloudflare の静的ファイルに付けるセキュリティ用のヘッダー（ローカルの server.mjs も同じものを付ける）。
+# Notion に埋め込めるよう、frame-ancestors / X-Frame-Options は付けない
+/*
+  Content-Security-Policy: default-src 'self'; connect-src 'self' wss://stt-rt.soniox.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), geolocation=(), microphone=(self)

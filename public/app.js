@@ -4,7 +4,7 @@ import { DemoSource } from "./demo.js";
 import { BUILTIN_TERMS, buildContext } from "./context.js";
 import { createEncoder, pickCodec } from "./codec.js";
 import { Uplink } from "./uplink.js";
-import { LANGUAGES, isLanguage, language, languageLabel, usesSpaces } from "./languages.js";
+import { LANGUAGES, isLanguage, language, languageLabel, nativeLabel, usesSpaces } from "./languages.js";
 
 const SONIOX_WS = "wss://stt-rt.soniox.com/transcribe-websocket";
 const params = new URLSearchParams(location.search);
@@ -71,23 +71,49 @@ const settings = {
 };
 if (settings.partnerLang === settings.myLang) settings.partnerLang = settings.myLang === "en" ? "ja" : "en";
 
-// アクセスキーは URL の ?k=...（旧形式の #k=... も可）で受け取り、この端末に覚えておく
-const ACCESS_KEY = (() => {
-  const hash = new URLSearchParams(location.hash.slice(1));
-  const fromUrl = params.get("k") || hash.get("k");
-  if (!fromUrl) return storage("accessKey") || "";
-  storage("accessKey", fromUrl);
-  // 翻訳画面ではアドレスバーからキーを消す（履歴・スクリーンショット・URLの共有から漏れないように）。
-  // 端末に覚えられなかったとき（プライベートブラウズなど）は、リロードで困らないよう残す
-  if (!EMBEDDED && storage("accessKey") === fromUrl) {
-    const url = new URL(location.href);
-    url.searchParams.delete("k");
-    hash.delete("k");
-    url.hash = hash.toString();
-    history.replaceState(null, "", url);
+// アクセスキーは、入力欄から登録するか、登録リンクの #k=... で受け取って、この端末に覚えておく
+// （# の後ろはサーバーにも送られない）。リンクのキーは、サーバーで正しいと確かめてから覚える
+const LINK_KEY = usableKey(new URLSearchParams(location.hash.slice(1)).get("k") || "");
+const SAVED_KEY = storage("accessKey") || "";
+let ACCESS_KEY = LINK_KEY || SAVED_KEY;
+
+// ヘッダーに入れられない文字（全角など。リンクの後ろに続いた文字を拾ったとき）を含むキーは使わない
+function usableKey(key) {
+  try {
+    new Headers({ "X-Access-Key": key });
+    return key;
+  } catch {
+    return "";
   }
-  return fromUrl;
-})();
+}
+
+// アドレスバーからキーを消す（履歴・スクリーンショット・URLの共有から漏れないように）
+function clearKeyFromUrl() {
+  const url = new URL(location.href);
+  const hash = new URLSearchParams(url.hash.slice(1));
+  if (!hash.has("k") && !url.searchParams.has("k")) return;
+  hash.delete("k");
+  url.hash = hash.toString();
+  if (url.searchParams.has("k")) url.searchParams.delete("k"); // 以前の版の ?k=... は使わない
+  history.replaceState(null, "", url);
+}
+
+// サーバーの設定を読み、キーが通ったら覚える。登録リンクのキーが違うときは、覚えているキーのまま続ける
+async function loadConfig() {
+  try {
+    cfg = await api("/api/config");
+  } catch (e) {
+    if (e.status === 401) clearKeyFromUrl(); // 違うキー・使えないキーのリンクは残さない
+    if (e.status !== 401 || !LINK_KEY || !SAVED_KEY || ACCESS_KEY === SAVED_KEY) throw e;
+    ACCESS_KEY = SAVED_KEY;
+    cfg = await api("/api/config");
+    showNotice("開いたリンクのアクセスキーが違うため、この端末に登録済みのキーをそのまま使います。", "info");
+  }
+  keyAccepted = true;
+  if (ACCESS_KEY === LINK_KEY) storage("accessKey", LINK_KEY);
+  // 端末に覚えられなかったとき（プライベートブラウズなど）は、リロードで困らないよう残す
+  if (storage("accessKey") === ACCESS_KEY) clearKeyFromUrl();
+}
 
 let cfg = { soniox: false, notion: false };
 let keyAccepted = false; // この端末のキーがサーバーに受け付けられたか（別の端末の登録リンクを出せるか）
@@ -833,6 +859,12 @@ function renderLanguageControls() {
   for (const select of document.querySelectorAll(".lang-select")) {
     const code = pair[select.dataset.role];
     const l = language(code);
+    // 相手の言語の一覧は、相手の言語での表記にする（相手の言語を変えたら作り直す）
+    const viewer = select.dataset.role === "partner" ? pair.partner : "ja";
+    if (select.dataset.viewer !== viewer) {
+      select.innerHTML = languageOptions(select.dataset.role, viewer);
+      select.dataset.viewer = viewer;
+    }
     select.value = code;
     select.disabled = locked;
     // 対面表示の相手側は、相手が読めるようその言語での名前にする
@@ -843,12 +875,16 @@ function renderLanguageControls() {
   $("langSwap").disabled = locked;
 }
 
-function fillLanguageSelects() {
-  const option = (l) => `<option value="${l.code}">${languageLabel(l.code)}</option>`;
-  const html =
-    `<optgroup label="よく使う言語">${LANGUAGES.filter((l) => l.common).map(option).join("")}</optgroup>` +
-    `<optgroup label="その他の言語">${LANGUAGES.filter((l) => !l.common).map(option).join("")}</optgroup>`;
-  for (const select of document.querySelectorAll(".lang-select")) select.innerHTML = html;
+// 自分の言語：日本語の名前（その言語での名前）。
+// 相手の言語：相手が読めるよう、その言語での名前＋相手の言語での名前。見出しは訳せないので区切り線にする
+function languageOptions(role, viewer) {
+  const label = role === "partner" ? (code) => nativeLabel(code, viewer) : languageLabel;
+  const option = (l) => `<option value="${l.code}">${label(l.code)}</option>`;
+  const common = LANGUAGES.filter((l) => l.common).map(option).join("");
+  const others = LANGUAGES.filter((l) => !l.common).map(option).join("");
+  return role === "partner"
+    ? `${common}<option disabled>──────────</option>${others}`
+    : `<optgroup label="よく使う言語">${common}</optgroup><optgroup label="その他の言語">${others}</optgroup>`;
 }
 
 // 片方を、もう片方と同じ言語にしたときは入れ替える
@@ -955,6 +991,11 @@ async function registerKey(e) {
   const error = $("keyError");
   error.hidden = true;
   if (!key) return;
+  if (!usableKey(key)) {
+    error.textContent = "アクセスキーが違います。";
+    error.hidden = false;
+    return;
+  }
   const res = await fetch("/api/config", { headers: { "X-Access-Key": key } }).catch(() => null);
   if (!res?.ok) {
     error.textContent = res?.status === 401 ? "アクセスキーが違います。" : "サーバーに接続できませんでした。";
@@ -1041,9 +1082,8 @@ function storage(key, value) {
 if (EMBEDDED) {
   document.body.classList.add("embedded");
   els.launcher.hidden = false;
-  // キーを受け取れていれば翻訳画面に渡す。受け取れなくても（iPhoneのNotionアプリなど）警告はしない。
-  // 翻訳画面の側が端末に覚えたキーを使い、なければそちらで案内する
-  els.launchLink.href = `${location.origin}${location.pathname}${ACCESS_KEY ? `?k=${encodeURIComponent(ACCESS_KEY)}` : ""}`;
+  // 埋め込みの URL にはキーを入れない。翻訳画面の側が端末に覚えたキーを使い、なければそちらで案内する
+  els.launchLink.href = `${location.origin}${location.pathname}`;
 } else {
   els.dock.addEventListener("click", (e) => {
     const act = e.target.closest("[data-act]")?.dataset.act;
@@ -1106,6 +1146,10 @@ if (EMBEDDED) {
       runMeter();
     }
   });
+  // 開いている画面のアドレス欄に登録リンクを貼ったとき（# の後ろだけ変わると読み込み直されない）
+  window.addEventListener("hashchange", () => {
+    if (new URLSearchParams(location.hash.slice(1)).has("k")) location.reload();
+  });
   window.addEventListener("beforeunload", (e) => {
     if (session && !["idle", "ended"].includes(state)) e.preventDefault();
   });
@@ -1119,14 +1163,12 @@ if (EMBEDDED) {
   }, 1000);
 
   setScale(settings.scale);
-  fillLanguageSelects();
   setView(settings.view);
   setState("idle");
   renderRecord();
 
   try {
-    cfg = await api("/api/config");
-    keyAccepted = true;
+    await loadConfig();
     if (!cfg.soniox && !DEMO) {
       showNotice("SONIOX_API_KEY が設定されていません（Cloudflare の Worker の設定 →「変数とシークレット」、ローカルは .env）。キーなしで画面を試すなら ?demo を付けて開いてください。");
     }

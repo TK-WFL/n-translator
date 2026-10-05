@@ -5,8 +5,8 @@
 # Soniox の API キー（https://console.soniox.com で発行）/ Soniox API key
 SONIOX_API_KEY=
 
-# 翻訳画面を開くための合言葉。自分で決めます（20文字以上のランダムな文字列がおすすめ）
-# A passphrase you choose to open the app (20+ random characters recommended)
+# 翻訳画面を開くための合言葉。自分で決めます（16文字以上。20文字以上のランダムな文字列がおすすめ）
+# A passphrase you choose to open the app (at least 16 characters; 20+ random characters recommended)
 ACCESS_KEY=
 
 # Notion の内部接続（インテグレーション）の API トークン（ntn_ で始まる）
@@ -17,3 +17,5 @@ NOTION_TOKEN=
 # Cloudflare の「変数とシークレット」に NOTION_PARENT_PAGE（ページの URL）を追加してください。
 # The log page is detected automatically (the page you added the connection to). Only if the connection
 # has access to several top-level pages, add NOTION_PARENT_PAGE (the page URL) in Cloudflare's "Variables and Secrets".
+# 個人用アクセストークン（PAT）を使うときは NOTION_PARENT_PAGE が必須です。翻訳ログを別の場所に置くときは NOTION_DATABASE（データベースの URL）。
+# NOTION_PARENT_PAGE is required with a personal access token (PAT). To keep the log elsewhere, set NOTION_DATABASE (the database URL).

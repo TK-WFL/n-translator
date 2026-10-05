@@ -2,7 +2,9 @@
   "name": "notion-live-translate",
   "main": "worker.js",
   "compatibility_date": "2025-09-01",
-  "assets": { "directory": "./public", "binding": "ASSETS" }
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+  // 管理画面で追加した値（NOTION_PARENT_PAGE など）を、公開し直しても消さない
+  "keep_vars": true
   // 秘密情報（SONIOX_API_KEY / ACCESS_KEY / NOTION_TOKEN、必要なら NOTION_PARENT_PAGE）は
   // 「Deploy to Cloudflare」の画面か、npx wrangler secret put で登録する（.dev.vars.example を参照）
 }

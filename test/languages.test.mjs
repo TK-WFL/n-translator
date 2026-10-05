@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { LANGUAGES, isLanguage, language, languageLabel, maxTurnChars, usesSpaces } from "../public/languages.js";
+import { LANGUAGES, isLanguage, language, languageLabel, maxTurnChars, nativeLabel, usesSpaces } from "../public/languages.js";
 
 test("Soniox の60言語がそろっていて、コードの重複がない", () => {
   assert.equal(LANGUAGES.length, 60);
@@ -19,4 +19,12 @@ test("表示名・旗・つなぎ方・1ブロックの長さ", () => {
   assert.equal(usesSpaces("ko"), true);
   assert.equal(maxTurnChars("ja"), 120);
   assert.equal(maxTurnChars("fr"), 280);
+});
+
+test("相手の言語の一覧：その言語での名前に、相手の言語での名前を添える", () => {
+  assert.equal(nativeLabel("es", "en"), "🇪🇸 Español (Spanish)");
+  assert.equal(nativeLabel("ja", "zh"), "🇯🇵 日本語（日语）");
+  assert.equal(nativeLabel("en", "en"), "🇺🇸 English"); // 同じ名前は重ねない
+  assert.equal(nativeLabel("es", "es"), "🇪🇸 Español"); // 大文字・小文字の違いだけなら重ねない
+  assert.equal(nativeLabel("ko", "ja"), "🇰🇷 한국어（韓国語）");
 });

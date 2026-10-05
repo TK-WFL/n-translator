@@ -76,6 +76,24 @@ export const languageLabel = (code) => {
   return l.name === l.native ? `${l.flag} ${l.name}` : `${l.flag} ${l.name}（${l.native}）`;
 };
 
+// 相手が選ぶときの表示：その言語での名前に、相手の言語（いま選んでいる言語）での名前を添える
+// （例：相手が英語なら「🇪🇸 Español (Spanish)」、中国語なら「🇪🇸 Español（西班牙语）」）。
+// 名前が分からない環境では日本語の名前を添える
+const displayNames = new Map();
+const WIDE_PARENS = new Set(["ja", "zh"]);
+
+export function nativeLabel(code, viewer) {
+  const l = language(code);
+  let local = l.name;
+  try {
+    if (!displayNames.has(viewer)) displayNames.set(viewer, new Intl.DisplayNames([viewer], { type: "language" }));
+    const name = displayNames.get(viewer).of(code);
+    if (name && name !== code) local = name;
+  } catch {}
+  if (local.toLowerCase() === l.native.toLowerCase()) return `${l.flag} ${l.native}`;
+  return WIDE_PARENS.has(viewer) ? `${l.flag} ${l.native}（${local}）` : `${l.flag} ${l.native} (${local})`;
+}
+
 // 単語を空白で区切らない言語。発言をつなぐときに空白を入れず、余計な空白も取る
 const NO_SPACE = new Set(["ja", "zh"]);
 export const usesSpaces = (code) => !NO_SPACE.has(code);

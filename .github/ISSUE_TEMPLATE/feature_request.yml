@@ -1,0 +1,23 @@
+name: 機能の提案 / Feature request
+description: こんなことができたら、という提案 / Suggest an idea
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **API キー・ACCESS_KEY・Notion のトークン・個人情報は書かないでください。** スクリーンショットやログも、workers.dev の URL や Notion の内容を必要に応じて隠してください。
+        **Do not include API keys, ACCESS_KEY, Notion tokens or personal information.** Redact screenshots and logs (workers.dev URL, Notion content) as needed.
+  - type: textarea
+    id: problem
+    attributes:
+      label: 困っていること・やりたいこと / Problem or goal
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 提案 / Proposed idea
+  - type: textarea
+    id: context
+    attributes:
+      label: 使う場面 / When you would use it

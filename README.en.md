@@ -7,7 +7,7 @@ Put the Notion page on the meeting-room projector and everyone can follow the co
 
 ![Left: the translation screen on iPhone (two-column view). Right: the Notion conversation page on the projector](docs/images/overview.jpg)
 
-▶ **[Watch the demo video (2:35, MP4, Japanese narration)](https://github.com/TK-WFL/n-translator/releases/download/v1.0.0/N-Translator_demo.mp4)** — what you say on the iPhone appears in Notion on the projector
+▶ **[Watch the demo video (2:34, MP4, Japanese narration)](https://github.com/TK-WFL/n-translator/releases/download/v1.0.0/N-Translator_demo.mp4)** — what you say on the iPhone appears in Notion on the projector
 
 - **Two-way live translation** — the spoken language is detected automatically. Speak Japanese and it is translated into your partner's language, and vice versa
 - **60 languages** — Japanese ⇄ English by default. Choose any two of 60 languages, such as Chinese, Korean, Spanish or Vietnamese
@@ -128,7 +128,7 @@ Pages under that page (such as conversation pages) are accessible automatically.
 <details>
 <summary>Using a personal access token (PAT) instead</summary>
 
-A token created under [Personal access tokens](https://www.notion.so/developers/tokens) in the Developer portal (starts with `ntn_`) also works. However, a PAT can access **every page you can see** and expires (up to one year). If you use a PAT, you must set `NOTION_PARENT_PAGE` to the URL of the log page. An internal connection, which can see only the page you share with it, is recommended.
+A token created under [Personal access tokens](https://www.notion.so/developers/tokens) in the Developer portal (starts with `ntn_`) also works. However, a PAT can access **every page you can see** and expires (up to one year). If you use a PAT, you must set `NOTION_PARENT_PAGE` to the URL of the log page (without it, the app refuses to pick a log page automatically). An internal connection, which can see only the page you share with it, is recommended.
 
 </details>
 
@@ -144,7 +144,7 @@ A token created under [Personal access tokens](https://www.notion.so/developers/
    | Name | Value |
    |---|---|
    | `SONIOX_API_KEY` | The Soniox API key from step 1 |
-   | `ACCESS_KEY` | A passphrase you choose to open the translation screen (20+ random characters recommended — use a password generator) |
+   | `ACCESS_KEY` | A passphrase you choose to open the translation screen (**at least 16 characters**; 20+ random characters recommended — use a password generator) |
    | `NOTION_TOKEN` | The Notion API token from step 2-2 (starts with `ntn_`) |
 
 5. Click "Deploy". After a minute or two you get a URL like `https://notion-live-translate.<your-subdomain>.workers.dev`
@@ -191,6 +191,7 @@ The "•••" menu has text size, 「用語を編集」 (edit terms), 「別�
 ### Choosing languages
 
 - Left is your language, right is your partner's. The list shows 18 common languages first, then the rest (60 in total)
+- The partner's list (right) shows each language in its own name plus its name in the partner's language, so your partner can read it (「🇪🇸 Español (Spanish)」 when the partner's language is English, 「🇪🇸 Español（西班牙语）」 when it is Chinese)
 - In the face-to-face view you can also choose from each column's heading. Your partner's heading shows the language in its own name (中文, 한국어, ...) so they can read it
 - Languages can't be changed during a conversation. Change them after 「終了」 (end); they apply to the next conversation
 
@@ -229,9 +230,9 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 | Name | Required | Description |
 |---|---|---|
 | `SONIOX_API_KEY` | ✓ | Your Soniox API key |
-| `ACCESS_KEY` | ✓ | The passphrase to open the translation screen (you choose it) |
+| `ACCESS_KEY` | ✓ | The passphrase to open the translation screen (you choose it; at least 16 characters) |
 | `NOTION_TOKEN` | ✓ | The API token of your Notion internal connection (starts with `ntn_`). Without it, translation still works but nothing is logged to Notion |
-| `NOTION_PARENT_PAGE` | | URL of the log page. Set it if the connection has access to several pages, or if you use a PAT |
+| `NOTION_PARENT_PAGE` | | URL of the log page. Set it if the connection has access to several pages, or if you use a PAT (required) |
 | `NOTION_DATABASE` | | URL of the log database, if you keep it outside the log page |
 
 ## Troubleshooting
@@ -241,7 +242,10 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 | 「アクセスキーが登録されていません」 (access key not registered) | Enter your `ACCESS_KEY` and tap 「登録」. If you forgot it, set a new `ACCESS_KEY` in Cloudflare |
 | 「SONIOX_API_KEY が設定されていません」 or 「Soniox: …」 errors | Check the key in Cloudflare's Variables and Secrets, and your Soniox balance and payment method |
 | 「Notion の接続がどのページにも追加されていません」 (the connection isn't added to any page) | Add the connection to your log page: "•••" → Connections → + Add connection ([2-3](#2-3-add-the-connection-to-your-log-page)) |
-| 「接続が追加されたページが複数あります」 (the connection is added to several pages) | Keep the connection on the log page only, or set `NOTION_PARENT_PAGE` to the log page URL |
+| 「接続が追加されたページが○つあります」 (the connection is added to several pages), 「ページが多すぎて…」 (too many pages) or 「内部接続のトークンではないため…」 (not an internal connection token) | Keep the connection on the log page only, or set `NOTION_PARENT_PAGE` to the log page URL |
+| 「ACCESS_KEY が短すぎます」 (too short) or 「ACCESS_KEY が未設定です」 (not set) | Set an `ACCESS_KEY` of at least 16 characters in Cloudflare's Variables and Secrets (after changing it, register each device again) |
+| 「…はこのアプリが作ったものではありません」 (not created by this app) | Appears if you updated the app or replaced `NOTION_TOKEN` in the middle of a conversation. Tap 「終了」 (end) and start a new one |
+| 「アクセスキーがないか、違います」 (missing or wrong access key) during a conversation | `ACCESS_KEY` was changed. Reopen the page and register the new key |
 | 「Notion 403」, 「Notion 401」 and similar errors | Check that Read / Update / Insert content are on in the connection's Capabilities, and that `NOTION_TOKEN` is correct (and current, if you regenerated it) |
 | 「マイクを使えませんでした」 (couldn't use the microphone) | Allow the microphone for Safari in iPhone Settings. In an in-app browser, reopen in Safari |
 | It switches to 「一時停止中」 (paused) by itself | 5 minutes of silence, you left the screen, or the microphone became unavailable. Tap 「再開」 to continue |
@@ -250,30 +254,38 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 
 ## Security and privacy
 
-- API keys and tokens are stored only as secrets in your Cloudflare account. They are never in the code or on screen
-- The translation screen and API can't be used without `ACCESS_KEY`. Anyone who knows it can use your Soniox and Notion through the app, so don't share it. If it may have leaked, change it in Cloudflare
-- Add the Notion connection only to your log page (the app doesn't read anything except its log)
+- API keys and tokens are stored only as secrets in your Cloudflare account. They are never in the code or on screen. The real Soniox key never reaches the browser; it gets a single-use temporary key instead (valid 60 seconds; one connection lasts at most 3 hours)
+- The translation screen and API can't be used without `ACCESS_KEY` (at least 16 characters). Anyone who knows it can use your Soniox and Notion logging through the app, so don't share it
+- In a registration link (`#k=…`) the key sits after `#`, so it is never sent to the server or written to access logs. The app checks a link's key before remembering it. Send registration links only between your own devices
+- **If you lose a device or the key may have leaked**: set a new `ACCESS_KEY` in Cloudflare (every registered device stops working, so register the ones you use again). If your Soniox key or Notion token may have leaked, regenerate it in that service's dashboard and replace the value in Cloudflare
+- Add the Notion connection only to your log page. From Notion, the app reads only the list of pages the connection can see (to find the log page) and the contents of the log page and its log. It writes only the guide, launch button and log it adds to the log page (「Notionページを準備」) and the conversation pages and blocks it created itself (IDs passed to the browser are signed and checked, so other pages can't be modified)
+- Anyone can read the conversations if you "Publish to web" the log page or share it outside your team. To show it in a meeting, project your screen instead of sharing the page
+- Found a security problem? Report it privately as described in [SECURITY.md](SECURITY.md), not in a public issue
 - Audio is processed by Soniox — see [Soniox security and privacy](https://soniox.com/docs/stt/security-and-privacy). Let the people you talk with know that the conversation is processed in the cloud and stored in Notion
 - Setting a usage limit in the Soniox dashboard protects you in case a key ever leaks
 
 ## Updating to a new version
 
-Pull the latest version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically.
+Pull a new version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically. Use a version (tag) listed under [Releases](https://github.com/TK-WFL/n-translator/releases) and review the changes before you pull them (replace `v1.0.0` below with that version).
 
 ```bash
 git clone https://github.com/<your-account>/<created-repository>.git
 cd <created-repository>
-git fetch https://github.com/TK-WFL/n-translator.git main
-git checkout FETCH_HEAD -- .
-git commit -m "Update N-Translator to the latest version"
+git fetch https://github.com/TK-WFL/n-translator.git refs/tags/v1.0.0
+git diff --stat HEAD FETCH_HEAD          # see which files change
+git diff HEAD FETCH_HEAD -- wrangler.jsonc   # config changes (apply by hand, see below)
+git checkout FETCH_HEAD -- . ':(exclude)wrangler.jsonc'
+git commit -m "Update N-Translator to v1.0.0"
 git push
 ```
 
-Your API keys and other settings are kept.
+`wrangler.jsonc` holds the Worker name you chose, so it is left alone (a different name would deploy a separate Worker without your secrets). If `wrangler.jsonc` changed, copy every change except `"name"` into your own `wrangler.jsonc` before committing. Your API keys and other settings are kept.
 
 ## For developers
 
 ### Run locally
+
+Requires Node.js 20 or later.
 
 ```bash
 cp .dev.vars.example .env   # fill in the values (ACCESS_KEY may be empty)
@@ -303,6 +315,7 @@ npm test
 | File | Role |
 |---|---|
 | `worker.js` / `wrangler.jsonc` | Cloudflare Workers entry point and config |
+| `public/_headers` | Security headers for the pages (CSP and others) |
 | `lib/api.js` | API (access key check, Soniox temporary keys, Notion logging and page setup) |
 | `server.mjs` | Local server |
 | `public/index.html` / `style.css` | Notion-style UI (only the launch button when embedded) |

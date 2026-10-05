@@ -1,0 +1,28 @@
+name: 使い方の質問 / Question
+description: セットアップや使い方についての質問 / Ask about setup or usage
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **API キー・ACCESS_KEY・Notion のトークン・個人情報は書かないでください。** スクリーンショットやログも、workers.dev の URL や Notion の内容を必要に応じて隠してください。
+        **Do not include API keys, ACCESS_KEY, Notion tokens or personal information.** Redact screenshots and logs (workers.dev URL, Notion content) as needed.
+  - type: textarea
+    id: question
+    attributes:
+      label: 質問 / Question
+      description: どこまで進んで、どこで困っているか（README のどの手順か）を書いてください / What you tried and where you got stuck (which README step)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: バージョン / Version
+      placeholder: v1.0.0
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: 確認 / Check
+      options:
+        - label: API キー・ACCESS_KEY・Notion のトークン・個人情報を含めていません / I removed API keys, ACCESS_KEY, Notion tokens and personal information
+          required: true
