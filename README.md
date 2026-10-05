@@ -7,7 +7,7 @@
 
 ![左：iPhoneの翻訳画面（2列表示）、右：プロジェクターに映したNotionの会話ページ](docs/images/overview.jpg)
 
-▶ **[紹介動画を見る（2分34秒・MP4）](https://github.com/TK-WFL/n-translator/releases/download/v1.0.0/N-Translator_demo.mp4)** — iPhone で話した内容が、プロジェクターの Notion に記録されていく様子
+▶ **[紹介動画を見る（2分49秒・MP4）](https://github.com/TK-WFL/n-translator/releases/download/v1.0.0/N-Translator_demo.mp4)** — iPhone で話した内容が、プロジェクターの Notion に記録されていく様子
 
 - **双方向のリアルタイム翻訳**：話す言語は自動で判定。日本語で話せば相手の言語に、相手の言語で話せば日本語に訳します
 - **60言語に対応**：日本語⇄英語が標準。中国語・韓国語・スペイン語・ベトナム語など、60言語から2つを選べます
