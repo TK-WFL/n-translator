@@ -17,6 +17,8 @@ Put the Notion page on the meeting-room projector and everyone can follow the co
 - **Works on weak networks** — audio is compressed, and recent audio is buffered and resent when the connection drops
 - **Custom terms** — register names, company terms and fixed translations. Common Notion and AI terms are built in
 
+**Before you start**: you need accounts for Soniox (credit card required, about $0.12 per hour), Notion (owner permission in the workspace to create a connection), and Cloudflare and GitHub (both free). Setup takes about 20 minutes → [Setup](#setup-about-20-minutes)
+
 <p>
   <img src="docs/images/face.jpg" alt="Face-to-face view" width="49%">
   <img src="docs/images/notion-table.jpg" alt="Side-by-side table in Notion (Japanese ⇄ Chinese)" width="49%">
@@ -73,7 +75,7 @@ See [Releases](https://github.com/TK-WFL/n-translator/releases) and [CHANGELOG.m
 | [Notion](https://www.notion.so) | Logging | Free plan works. Creating a connection (integration) requires the workspace owner role. Notion AI is needed only if you want the summary column filled automatically |
 | [Cloudflare](https://dash.cloudflare.com/sign-up) | Hosts the translation screen and the relay server | Free plan works (100,000 requests/day) |
 | [GitHub](https://github.com/signup) | Used when deploying to Cloudflare | Free |
-| iPhone (Safari) | Recording and display | Chrome on Mac or Android also works |
+| iPhone (Safari) | Recording and display | Also tested with Chrome on Mac (Android not tested yet) |
 
 Translation pauses automatically after 5 minutes of silence, so a forgotten session won't keep running up Soniox charges.
 
@@ -116,7 +118,7 @@ Its contents (guide, launch button, log database) are created with one tap in [s
 
 #### 2-3. Add the connection to your log page
 
-Add the connection from 2-2 to the page from 2-1, in either way:
+Add the connection from 2-2 to the page from 2-1 in either of two ways:
 
 - **From the Notion page**: page menu "•••" (top right) → **Connections** (「接続」) → **+ Add connection** (「接続を追加」) → search for the connection name (`N-Translator`), select it and confirm
 - **From the Developer portal**: the connection's **Content access** tab → **Edit access** → select your log page
@@ -163,7 +165,7 @@ On the translation screen, tap "•••" (top right) → 「**Notionページ�
 
 - A short guide
 - A 「翻訳をはじめる」 (start translating) button — a Notion embed that opens the translation screen in Safari on iPhone
-- The 「翻訳ログ」 (translation log) database — one row per conversation with name, date, length, utterance count, partner and summary
+- The 「翻訳ログ」 (translation log) database — one row per conversation. Name, date, length and utterance count are filled in automatically; partner and summary are columns for you to fill in (summary can also use Notion AI autofill)
 
 Tapping it again never creates duplicates. If you start talking without it, the log database is still created automatically with your first conversation.
 
@@ -207,7 +209,7 @@ On a registered device, open "•••" → 「別の端末を登録」 (regist
 
 - Each conversation page has two tabs: 「💬 ログ」 (log) and 「📖 2列（対訳）」 (side-by-side table)
 - If you have Notion AI, set the 「要約」 (summary) column to AI autofill to get a summary of each conversation a few minutes later
-- Keep the database name 「翻訳ログ」 (if you rename it, a new database is created). Moving it within the page is fine
+- Keep the database name 「翻訳ログ」 (if you rename it, a new database is created). Moving it up or down directly on the page is fine, but if you put it inside a column or toggle, the app can't find it and creates a new database
 - Renaming columns won't break anything, but renamed columns (date, length, count) stop being filled in
 
 ### Weak networks
@@ -231,9 +233,9 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 |---|---|---|
 | `SONIOX_API_KEY` | ✓ | Your Soniox API key |
 | `ACCESS_KEY` | ✓ | The passphrase to open the translation screen (you choose it; at least 16 characters) |
-| `NOTION_TOKEN` | ✓ | The API token of your Notion internal connection (starts with `ntn_`). Without it, translation still works but nothing is logged to Notion |
+| `NOTION_TOKEN` | For logging | The API token of your Notion internal connection (starts with `ntn_`). Without it, translation still works but nothing is logged to Notion |
 | `NOTION_PARENT_PAGE` | | URL of the log page. Set it if the connection has access to several pages, or if you use a PAT (required) |
-| `NOTION_DATABASE` | | URL of the log database, if you keep it outside the log page |
+| `NOTION_DATABASE` | | URL of the log database, if you keep it outside the log page (if the URL you copied from the browser ends with `?v=…`, delete everything from `?` onward) |
 
 ## Troubleshooting
 
@@ -241,6 +243,7 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 |---|---|
 | 「アクセスキーが登録されていません」 (access key not registered) | Enter your `ACCESS_KEY` and tap 「登録」. If you forgot it, set a new `ACCESS_KEY` in Cloudflare |
 | 「SONIOX_API_KEY が設定されていません」 or 「Soniox: …」 errors | Check the key in Cloudflare's Variables and Secrets, and your Soniox balance and payment method |
+| 「再接続中…」 (reconnecting) keeps showing even with a good signal, then 「3分以上つながらなかったため一時停止しました」 (paused after more than 3 minutes without a connection) | Your `SONIOX_API_KEY` may be wrong or your Soniox balance may have run out. Check the key in Cloudflare's Variables and Secrets, and your balance and payment method in the Soniox dashboard |
 | 「Notion の接続がどのページにも追加されていません」 (the connection isn't added to any page) | Add the connection to your log page: "•••" → Connections → + Add connection ([2-3](#2-3-add-the-connection-to-your-log-page)) |
 | 「接続が追加されたページが○つあります」 (the connection is added to several pages), 「ページが多すぎて…」 (too many pages) or 「内部接続のトークンではないため…」 (not an internal connection token) | Keep the connection on the log page only, or set `NOTION_PARENT_PAGE` to the log page URL |
 | 「ACCESS_KEY が短すぎます」 (too short) or 「ACCESS_KEY が未設定です」 (not set) | Set an `ACCESS_KEY` of at least 16 characters in Cloudflare's Variables and Secrets (after changing it, register each device again) |
@@ -261,12 +264,12 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 - Add the Notion connection only to your log page. From Notion, the app reads only the list of pages the connection can see (to find the log page) and the contents of the log page and its log. It writes only the guide, launch button and log it adds to the log page (「Notionページを準備」) and the conversation pages and blocks it created itself (IDs passed to the browser are signed and checked, so other pages can't be modified)
 - Anyone can read the conversations if you "Publish to web" the log page or share it outside your team. To show it in a meeting, project your screen instead of sharing the page
 - Found a security problem? Report it privately as described in [SECURITY.md](SECURITY.md), not in a public issue
-- Audio is processed by Soniox — see [Soniox security and privacy](https://soniox.com/docs/stt/security-and-privacy). Let the people you talk with know that the conversation is processed in the cloud and stored in Notion
+- Audio is processed by Soniox — see [Soniox security and privacy](https://soniox.com/docs/security-and-privacy). Let the people you talk with know that the conversation is processed in the cloud and stored in Notion
 - Setting a usage limit in the Soniox dashboard protects you in case a key ever leaks
 
 ## Updating to a new version
 
-Pull a new version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically. Use a version (tag) listed under [Releases](https://github.com/TK-WFL/n-translator/releases) and review the changes before you pull them (replace `v1.0.0` below with that version).
+Pull a new version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically. Use a version (tag) listed under [Releases](https://github.com/TK-WFL/n-translator/releases) and review the changes before you pull them (replace `v1.0.0` below with that version). You need git and a GitHub login that can push.
 
 ```bash
 git clone https://github.com/<your-account>/<created-repository>.git
@@ -278,6 +281,8 @@ git checkout FETCH_HEAD -- . ':(exclude)wrangler.jsonc'
 git commit -m "Update N-Translator to v1.0.0"
 git push
 ```
+
+Files deleted in the new version stay in your copy with this method. In `git diff --name-status HEAD FETCH_HEAD`, files marked `D` are not in the new version; remove the ones you don't need with `git rm <file>` before committing.
 
 `wrangler.jsonc` holds the Worker name you chose, so it is left alone (a different name would deploy a separate Worker without your secrets). If `wrangler.jsonc` changed, copy every change except `"name"` into your own `wrangler.jsonc` before committing. Your API keys and other settings are kept.
 
