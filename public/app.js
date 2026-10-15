@@ -117,6 +117,7 @@ async function loadConfig() {
 
 let cfg = { soniox: false, notion: false };
 let keyAccepted = false; // この端末のキーがサーバーに受け付けられたか（別の端末の登録リンクを出せるか）
+let configError = null; // 設定を読めなかったときの案内（キーが未登録・サーバーにつながらない）
 let state = "idle";
 let session = null; // 「開始」から「終了」までの1回の会話
 let stream = null;
@@ -189,6 +190,11 @@ const elapsedMs = (s) => s.activeMs + (s.runStart ? Date.now() - s.runStart : 0)
 
 // 新しい会話を始める
 async function start() {
+  // 設定を読めなかったときは、SONIOX_API_KEY の案内ではなく、読めなかった理由をもう一度出す
+  if (!DEMO && configError) {
+    showNotice(configError);
+    return;
+  }
   if (!DEMO && !cfg.soniox) {
     showNotice("SONIOX_API_KEY が設定されていません（Cloudflare の Worker の設定 →「変数とシークレット」、ローカルは .env）。");
     return;
@@ -237,6 +243,11 @@ async function beginStreaming() {
     if (state === "live" || state === "reconnecting") pause("mic");
   });
   await requestWakeLock();
+  if (id !== gen) {
+    // 画面の消灯防止を待っている間に終了・一時停止された
+    releaseWakeLock();
+    return;
+  }
   session.runStart = Date.now();
   lastVoiceAt = Date.now();
   connect(id);
@@ -1173,11 +1184,11 @@ if (EMBEDDED) {
       showNotice("SONIOX_API_KEY が設定されていません（Cloudflare の Worker の設定 →「変数とシークレット」、ローカルは .env）。キーなしで画面を試すなら ?demo を付けて開いてください。");
     }
   } catch (e) {
-    showNotice(
+    configError =
       e.status === 401
         ? "この端末には、まだアクセスキーが登録されていません（または古いキーです）。下の欄にアクセスキーを入力するか、登録済みの端末で「•••」→「別の端末を登録」のリンクを開いてください。"
-        : `サーバーに接続できません: ${e.message}`,
-    );
+        : `サーバーに接続できません: ${e.message}`;
+    showNotice(configError);
     $("keyForm").hidden = e.status !== 401;
   }
   renderRecord();

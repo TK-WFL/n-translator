@@ -495,3 +495,21 @@ test("Notionページを準備：説明と起動ボタン（キーなしのURL�
     m.restore();
   }
 });
+
+test("Notionページを準備：翻訳ログを別の場所（NOTION_DATABASE）に置いているときは、記録先のページに作らず「追加した」とも言わない", async () => {
+  resetNotionCache();
+  const m = mockFetch((c) => {
+    if (c.method === "GET" && c.path.startsWith(`/blocks/${PARENT}/children`)) return [200, { results: [], has_more: false }];
+    if (c.method === "PATCH" && c.path === `/blocks/${PARENT}/children`) return [200, { results: [{ id: "c1" }, { id: "e1" }] }];
+    if (c.method === "GET" && c.path.startsWith("/databases/")) return [200, { properties: DEFAULT_PROPS }];
+    return [200, {}];
+  });
+  try {
+    const dbEnv = { ...env, NOTION_DATABASE: "fedcba9876543210fedcba9876543210" };
+    const res = await (await handleApi(req("/api/notion/setup", { body: {} }), dbEnv, opts)).json();
+    assert.deepEqual(res, { pageUrl: `https://www.notion.so/${PARENT}`, addedButton: true, addedDatabase: false });
+    assert.equal(m.calls.some((c) => c.path === "/databases"), false);
+  } finally {
+    m.restore();
+  }
+});
