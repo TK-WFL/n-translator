@@ -114,13 +114,16 @@ test("URLからNotionのIDを取り出す：?v=（ビュー）や #（ブロッ�
   assert.equal(extractNotionId(`https://www.notion.so/ws/Page-${PARENT}#${VIEW}`), PARENT);
   // 「サイドで開く」で開いたページは、開いているページの ID
   assert.equal(extractNotionId(`https://www.notion.so/ws/${VIEW}?v=${VIEW}&p=${ROW}&pm=s`), ROW);
+  // データベースの URL では、開いている行（?p=）ではなくデータベースの ID
+  assert.equal(extractNotionId(`https://www.notion.so/ws/${PARENT}?v=${VIEW}&p=${ROW}&pm=s`, { database: true }), PARENT);
 });
 
-test("NOTION_DATABASE に ?v= 付きの URL を入れても、そのデータベースに記録する", () =>
+test("NOTION_DATABASE に ?v= 付きの URL（行を開いたままの ?p= も）を入れても、そのデータベースに記録する", () =>
   withNotion({}, async (calls) => {
     const DB = "fedcba9876543210fedcba9876543210";
     const VIEW = "00000000111111112222222233333333";
-    const dbEnv = { ...env, NOTION_DATABASE: `https://www.notion.so/ws/${DB}?v=${VIEW}&pvs=4` };
+    // 行を「サイドで開く」で開いたままコピーした URL（?p= は開いている行）
+    const dbEnv = { ...env, NOTION_DATABASE: `https://www.notion.so/ws/${DB}?v=${VIEW}&p=${"a".repeat(32)}&pm=s` };
     const res = await handleApi(req("/api/notion/session", { body: { title: "会話" } }), dbEnv, opts);
     assert.equal(res.status, 200);
     assert.ok(calls.some((c) => pathOf(c) === `GET /databases/${DB}`));
