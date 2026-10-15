@@ -235,7 +235,7 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 | `ACCESS_KEY` | ✓ | The passphrase to open the translation screen (you choose it; at least 16 characters) |
 | `NOTION_TOKEN` | For logging | The API token of your Notion internal connection (starts with `ntn_`). Without it, translation still works but nothing is logged to Notion |
 | `NOTION_PARENT_PAGE` | | URL of the log page. Set it if the connection has access to several pages, or if you use a PAT (required) |
-| `NOTION_DATABASE` | | URL of the log database, if you keep it outside the log page (if the URL you copied from the browser ends with `?v=…`, delete everything from `?` onward) |
+| `NOTION_DATABASE` | | URL of the log database, if you keep it outside the log page (the URL copied from the browser's address bar works as is) |
 
 ## Troubleshooting
 
