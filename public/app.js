@@ -335,12 +335,14 @@ async function connect(id) {
       // （キー・残高・利用の上限のエラーは音声と関係ないので除く）
       if (!socket.gotResult && audio?.pipe?.codec.kind === "opus" && ![401, 402, 403, 429].includes(code)) {
         switchToStandardCodec();
-      } else if (isPermanentSonioxError(code)) {
-        // キーの誤り・残高不足などは、つなぎ直しても直らないので止めて原因を出す（電波の問題に見えないように）
+      } else if (!socket.gotResult && isPermanentSonioxError(code)) {
+        // つないですぐのキーの誤り・残高不足などは、つなぎ直しても直らないので止めて原因を出す（電波の問題に見えないように）。
+        // 翻訳の途中で切られたとき（1回の接続の上限など）は、これまでどおりつなぎ直す（直らない原因なら、つなぎ直した直後にここで止まる）
         socket.stopping = true;
         socket.close();
-        if (ws === socket) {
+        if (ws === socket && id === gen) {
           ws = null;
+          audio?.pipe?.uplink.detach(); // 閉じた接続に音声を送らない
           fail(sonioxErrorMessage(code, msg.error_message));
         }
         return;
