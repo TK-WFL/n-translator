@@ -14,6 +14,8 @@ permissions:
 
 jobs:
   analyze:
+    # 「Deploy to Cloudflare」や更新でコピーされた各自のリポジトリでは動かさない（非公開だと CodeQL は使えず失敗する）
+    if: github.repository == 'TK-WFL/n-translator'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

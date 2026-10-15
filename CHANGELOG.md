@@ -1,5 +1,51 @@
 # Changelog
 
+## v1.0.1 — 2026-10-15
+
+不具合の修正版です。設定（変数とシークレット）の変更は要りません。 / Bug fix release. No settings (variables and secrets) need to change.
+
+### 日本語
+
+**直したこと**
+
+- 翻訳ログのデータベースの URL（`NOTION_DATABASE`）に、ブラウザのアドレス欄からコピーした URL をそのまま使えるように。ビューの `?v=…` や、行を開いたままの `?p=…` が付いていると、そちらの ID が使われて記録できなかった。ブロックへのリンク（`#…`）も同じ（#1）
+- Soniox の API キーの誤り・残高不足・利用の上限のとき、3分間「再接続中…」が続いたあと「電波の良い場所で」と出て、電波の問題に見えていた。すぐ止めて「Soniox の API キーが使えません」「Soniox の残高が足りません」などと原因を出す。翻訳の途中で切られたときは、これまでどおりつなぎ直す（#2）
+- Notion に書き込めなかった発言（電波が途切れた直後の発言など）が、会話ページに残らず失われていた。次の発言を書けたときと「終了」のときに書き直す。書き直した発言はページの下に付き、まれに同じ発言が2つ書かれることがある（#9）
+- キーが未登録の端末で「翻訳を開始」を押すと、「SONIOX_API_KEY が設定されていません」と出てサーバーの設定の問題に見えていた（#6）
+- 「接続中…」の間に「終了」すると、終了後も経過時間が進み、画面が消えなくなることがあった（#7）
+- `NOTION_DATABASE` を使っているとき、「Notionページを準備」が何も作っていないのに「翻訳ログを追加しました」と報告していた。データベースを開けないときはエラーを出す（#8）
+
+**更新のしかた**
+
+- README の「新しい版に更新する」の手順で `v1.0.1` を取り込みます。手順に `':(exclude).github'` を足しました（このリポジトリの開発用の自動テストなどの設定は取り込まない）
+- 新しいファイル：`public/soniox-errors.js`
+
+**開発**
+
+- Pull Request ごとに自動テスト（Node.js 22 と 20）と CodeQL を実行し、main へのマージにはすべての成功が必要。コピーされた各自のリポジトリでは動かない
+- 自動テスト 66件
+
+### English
+
+**Fixes**
+
+- `NOTION_DATABASE` now accepts the URL copied from the browser's address bar as is. With a view (`?v=…`) or an open row (`?p=…`) in the URL, that ID was used instead and nothing was logged. Links to a block (`#…`) had the same problem (#1)
+- A wrong Soniox API key, insufficient balance or a usage limit showed 「再接続中…」 (reconnecting) for 3 minutes and then a message about the signal. The app now stops right away and says what to check (「Soniox の API キーが使えません」 the key doesn't work, 「Soniox の残高が足りません」 insufficient balance, …). If a session is cut off mid-conversation, it still reconnects (#2)
+- Utterances that failed to reach Notion (e.g. just after the signal dropped) were lost from the conversation page. They are now written again after the next successful write and when you end the conversation. Rewritten utterances appear at the bottom of the page, and in rare cases one may appear twice (#9)
+- On a device without a registered key, tapping 「翻訳を開始」 (start) showed 「SONIOX_API_KEY が設定されていません」, which looked like a server problem (#6)
+- Ending during 「接続中…」 (connecting) could leave the elapsed time running and keep the screen awake (#7)
+- With `NOTION_DATABASE`, 「Notionページを準備」 (prepare Notion page) reported that it added the log database when it added nothing. It now shows an error if the database can't be opened (#8)
+
+**Updating**
+
+- Follow "Updating to a new version" in the README with `v1.0.1`. The steps now include `':(exclude).github'` (this repository's CI and other development settings are not pulled in)
+- New file: `public/soniox-errors.js`
+
+**Development**
+
+- Every pull request runs the automated tests (Node.js 22 and 20) and CodeQL, and all must pass before merging into main. They don't run in copies of this repository
+- 66 automated tests
+
 ## v1.0.0 — 2026-10-05
 
 最初の公開版です。 / First public release.
