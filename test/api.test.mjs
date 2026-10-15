@@ -132,6 +132,27 @@ test("Soniox の一時キーを発行する", async () => {
   }
 });
 
+test("Soniox のキーの誤り・残高不足は 424 で返し（画面ですぐ止める）、Soniox 側の不調は 502 で返す（つなぎ直す）", async () => {
+  for (const [upstream, status, pattern] of [
+    [401, 424, /API キーが使えません.*Soniox 401: Invalid API key.*SONIOX_API_KEY/],
+    [402, 424, /残高が足りません.*Soniox 402/],
+    [429, 424, /利用の上限.*Soniox 429/],
+    [400, 424, /Soniox 400/],
+    [408, 502, /Soniox 408/],
+    [500, 502, /Soniox 500/],
+    [503, 502, /Soniox 503/],
+  ]) {
+    const m = mockFetch(() => [upstream, { message: upstream === 401 ? "Invalid API key" : "x" }]);
+    try {
+      const res = await call("/api/soniox-key", {});
+      assert.equal(res.status, status, String(upstream));
+      assert.match((await res.json()).error, pattern);
+    } finally {
+      m.restore();
+    }
+  }
+});
+
 test("会話の開始：既存の「翻訳ログ」に1行追加する（2回目は探し直さない）", () =>
   withNotion({ db: "db-1" }, async (calls) => {
     const res = await call("/api/notion/session", { title: "会話 9/29 14:03", startedAt: "2026-09-29T05:03:00.000Z" });

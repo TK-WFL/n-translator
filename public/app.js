@@ -4,6 +4,7 @@ import { DemoSource } from "./demo.js";
 import { BUILTIN_TERMS, buildContext } from "./context.js";
 import { createEncoder, pickCodec } from "./codec.js";
 import { Uplink } from "./uplink.js";
+import { isPermanentSonioxError, sonioxErrorMessage } from "./soniox-errors.js";
 import { LANGUAGES, isLanguage, language, languageLabel, nativeLabel, usesSpaces } from "./languages.js";
 
 const SONIOX_WS = "wss://stt-rt.soniox.com/transcribe-websocket";
@@ -309,7 +310,7 @@ async function connect(id) {
     ({ api_key: apiKey } = await api("/api/soniox-key", {}));
   } catch (e) {
     if (id !== gen) return;
-    // キーが違うなど、つなぎ直しても直らない失敗はすぐ止める。通信の失敗はつなぎ直す
+    // キーが違う・Soniox の残高が足りない（424）など、つなぎ直しても直らない失敗はすぐ止める。通信の失敗はつなぎ直す
     if (e.status && e.status < 500) fail(e.message);
     else scheduleReconnect(id);
     return;
@@ -329,8 +330,23 @@ async function connect(id) {
   socket.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     if (msg.error_code != null || msg.error_message) {
-      if (!socket.gotResult && audio?.pipe?.codec.kind === "opus") switchToStandardCodec();
-      else showNotice(`Soniox: ${msg.error_message || msg.error_code}`);
+      const code = Number(msg.error_code);
+      // 最初の結果より前のエラーは、圧縮した音声を受け付けてもらえなかった可能性があるので標準の方式でつなぎ直す
+      // （キー・残高・利用の上限のエラーは音声と関係ないので除く）
+      if (!socket.gotResult && audio?.pipe?.codec.kind === "opus" && ![401, 402, 403, 429].includes(code)) {
+        switchToStandardCodec();
+      } else if (isPermanentSonioxError(code)) {
+        // キーの誤り・残高不足などは、つなぎ直しても直らないので止めて原因を出す（電波の問題に見えないように）
+        socket.stopping = true;
+        socket.close();
+        if (ws === socket) {
+          ws = null;
+          fail(sonioxErrorMessage(code, msg.error_message));
+        }
+        return;
+      } else {
+        showNotice(`Soniox: ${msg.error_message || msg.error_code}`);
+      }
       socket.close();
       return;
     }

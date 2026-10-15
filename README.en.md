@@ -242,8 +242,9 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 | Message / symptom | What to do |
 |---|---|
 | 「アクセスキーが登録されていません」 (access key not registered) | Enter your `ACCESS_KEY` and tap 「登録」. If you forgot it, set a new `ACCESS_KEY` in Cloudflare |
-| 「SONIOX_API_KEY が設定されていません」 or 「Soniox: …」 errors | Check the key in Cloudflare's Variables and Secrets, and your Soniox balance and payment method |
-| 「再接続中…」 (reconnecting) keeps showing even with a good signal, then 「3分以上つながらなかったため一時停止しました」 (paused after more than 3 minutes without a connection) | Your `SONIOX_API_KEY` may be wrong or your Soniox balance may have run out. Check the key in Cloudflare's Variables and Secrets, and your balance and payment method in the Soniox dashboard |
+| 「SONIOX_API_KEY が設定されていません」 (not set) or 「Soniox の API キーが使えません」 (the Soniox API key doesn't work) | Check `SONIOX_API_KEY` in Cloudflare's Variables and Secrets |
+| 「Soniox の残高が足りません」 (insufficient Soniox balance) | Check your balance and payment method in the Soniox dashboard |
+| 「Soniox の利用の上限に達しました」 (Soniox usage limit reached), 「Soniox でエラーが起きました」 (Soniox error) or 「Soniox: …」 errors | Wait a moment and try again. If it keeps happening, also check your balance and payment method in the Soniox dashboard |
 | 「Notion の接続がどのページにも追加されていません」 (the connection isn't added to any page) | Add the connection to your log page: "•••" → Connections → + Add connection ([2-3](#2-3-add-the-connection-to-your-log-page)) |
 | 「接続が追加されたページが○つあります」 (the connection is added to several pages), 「ページが多すぎて…」 (too many pages) or 「内部接続のトークンではないため…」 (not an internal connection token) | Keep the connection on the log page only, or set `NOTION_PARENT_PAGE` to the log page URL |
 | 「ACCESS_KEY が短すぎます」 (too short) or 「ACCESS_KEY が未設定です」 (not set) | Set an `ACCESS_KEY` of at least 16 characters in Cloudflare's Variables and Secrets (after changing it, register each device again) |
@@ -328,6 +329,7 @@ npm test
 | `public/codec.js` / `uplink.js` | Audio compression and sending (buffering while disconnected, skipping when backed up) |
 | `public/segmenter.js` / `turns.js` | Group Soniox results into utterances and turns |
 | `public/languages.js` | The 60 languages and per-language handling |
+| `public/soniox-errors.js` | Soniox error handling (reconnect or stop) and messages |
 | `public/context.js` | Built-in terms |
 | `public/demo.js` | Sample conversation for `?demo` |
 | `test/` | Automated tests |
