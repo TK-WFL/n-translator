@@ -464,7 +464,8 @@ async function end() {
   if (els.notice.classList.contains("info")) hideNotice(); // 一時停止の案内はもう要らない
   setState("ending");
   if (streaming) await stopStreaming();
-  await notionQueue; // 最後の発言がNotionに書き込まれるのを待つ
+  retryFailedTurn(session);
+  await notionSettled(); // 最後の発言（と書き込めなかった発言）がNotionに書き込まれるのを待つ
   await saveStats();
   setState("ended");
   renderRecord();
@@ -552,6 +553,7 @@ function syncTurn(s, turn) {
         turn.blockId = blockId;
         turn.rowId = rowId ?? turn.rowId;
         turn.syncError = null;
+        retryFailedTurn(s); // 書き込めるようになったので、書き込めなかった発言をやり直す
       } catch (e) {
         turn.syncError = e.message;
         notifyOnce(s, `Notionへの書き込みに失敗しました: ${e.message}`);
@@ -559,6 +561,25 @@ function syncTurn(s, turn) {
     }
     if (s === session) renderTranscript();
   });
+}
+
+// 書き込めなかった発言（電波が途切れた・翻訳ログの行を作れなかったときの発言）を、古い順に1つずつ書き直す。
+// 書けたら次へ進み、書けなければそこで止める（どれかの発言が次に書けたとき・終了のときに続きから）。
+// 同じ発言は3回まで。あとから書いた分は Notion では下に付く
+const MAX_RETRIES = 3;
+
+function retryFailedTurn(s) {
+  const turn = s.turns.list.find((t) => t.syncError && !t.queued && (t.retries ?? 0) < MAX_RETRIES);
+  if (!turn) return;
+  turn.retries = (turn.retries ?? 0) + 1;
+  syncTurn(s, turn);
+}
+
+// Notion への書き込みがすべて終わるのを待つ（待っている間に足されたやり直しの分も）
+async function notionSettled() {
+  let queue;
+  do await (queue = notionQueue);
+  while (queue !== notionQueue);
 }
 
 // 一時停止・終了のときに長さと発言数を書き込む
