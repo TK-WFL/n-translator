@@ -269,22 +269,24 @@ Cloudflare の「設定」→「変数とシークレット」に、種類「シ
 
 ## 新しい版に更新する
 
-3. で Cloudflare が作った、あなたの GitHub のリポジトリに新しい版を取り込むと、Cloudflare が自動で公開し直します。取り込むのは [Releases](https://github.com/TK-WFL/n-translator/releases) に載っている版（タグ）にし、変更点を確かめてから取り込みます（下の `v1.0.0` は取り込む版に置き換えます）。git と、push するための GitHub へのログインが必要です。
+3. で Cloudflare が作った、あなたの GitHub のリポジトリに新しい版を取り込むと、Cloudflare が自動で公開し直します。取り込むのは [Releases](https://github.com/TK-WFL/n-translator/releases) に載っている版（タグ）にし、変更点を確かめてから取り込みます（下の `v1.0.1` は取り込む版に置き換えます）。git と、push するための GitHub へのログインが必要です。
 
 ```bash
 git clone https://github.com/<あなたのアカウント>/<作られたリポジトリ>.git
 cd <作られたリポジトリ>
-git fetch https://github.com/TK-WFL/n-translator.git refs/tags/v1.0.0
+git fetch https://github.com/TK-WFL/n-translator.git refs/tags/v1.0.1
 git diff --stat HEAD FETCH_HEAD          # 変わるファイルを確かめる
 git diff HEAD FETCH_HEAD -- wrangler.jsonc   # 設定の変更（あれば下の説明のとおり手で反映）
-git checkout FETCH_HEAD -- . ':(exclude)wrangler.jsonc'
-git commit -m "N-Translator を v1.0.0 に更新"
+git checkout FETCH_HEAD -- . ':(exclude)wrangler.jsonc' ':(exclude).github'
+git commit -m "N-Translator を v1.0.1 に更新"
 git push
 ```
 
 新しい版で削除されたファイルは、この方法では手元に残ります。`git diff --name-status HEAD FETCH_HEAD` で先頭に `D` が付いたファイルが新しい版にないファイルなので、不要なら `git rm <ファイル名>` で消してからコミットします。
 
 `wrangler.jsonc` には、あなたが決めた Worker の名前が入っているので上書きしません（名前が変わると、シークレットのない別の Worker ができてしまいます）。`wrangler.jsonc` に変更があったときは、`"name"` 以外の変更を自分の `wrangler.jsonc` に手で書き足してからコミットします。設定した API キーなどはそのまま引き継がれます。
+
+`.github`（このリポジトリの開発用の自動テストなどの設定）は取り込みません。
 
 ## 開発者向け
 

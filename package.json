@@ -1,6 +1,6 @@
 {
   "name": "notion-live-translate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Face-to-face live translation on iPhone, logged to Notion (N-Translator)",
   "license": "MIT",
   "private": true,
