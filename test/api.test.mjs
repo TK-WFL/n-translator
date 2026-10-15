@@ -513,3 +513,22 @@ test("Notionページを準備：翻訳ログを別の場所（NOTION_DATABASE�
     m.restore();
   }
 });
+
+test("Notionページを準備：NOTION_DATABASE のデータベースを開けないときは、準備できたと言わずにエラーを返す", async () => {
+  resetNotionCache();
+  const m = mockFetch((c) => {
+    if (c.method === "GET" && c.path.startsWith(`/blocks/${PARENT}/children`)) return [200, { results: [], has_more: false }];
+    if (c.method === "PATCH" && c.path === `/blocks/${PARENT}/children`) return [200, { results: [{ id: "c1" }, { id: "e1" }] }];
+    if (c.method === "GET" && c.path.startsWith("/databases/")) return [404, { message: "Could not find database" }];
+    return [200, {}];
+  });
+  try {
+    const dbEnv = { ...env, NOTION_DATABASE: "fedcba9876543210fedcba9876543210" };
+    const res = await handleApi(req("/api/notion/setup", { body: {} }), dbEnv, opts);
+    assert.equal(res.status, 502);
+    assert.match((await res.json()).error, /Notion 404/);
+    assert.equal(m.calls.some((c) => c.path === "/databases"), false); // 新しく作らない
+  } finally {
+    m.restore();
+  }
+});
