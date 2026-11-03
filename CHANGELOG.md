@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.1.0 — 2026-11-04
+
+Soniox の新しい音声認識モデル（STT v6）に切り替えた版です。設定（変数とシークレット）の変更は要りません。 / Switches to Soniox's new speech recognition model (STT v6). No settings (variables and secrets) need to change.
+
+### 日本語
+
+**変わったこと**
+
+- Soniox の音声認識モデルを `stt-rt-v5` から `stt-rt-v6` に。Soniox によると、v6 ではリアルタイム翻訳の精度（数字・日付・金額を含む）、文の途中での言語の切り替え、登録した用語の効き方がよくなっている。`stt-rt-v5` は 2026-12-15 に削除され、以後は v6 に自動で転送される（#15）
+
+**更新のしかた**
+
+- README の「新しい版に更新する」の手順で `v1.1.0` を取り込みます。アプリの動きに関わる変更は `public/app.js` の1行だけです
+- 更新しなくても、2026-12-15 以降は v6 で動きます
+
+### English
+
+**Changes**
+
+- Switched the Soniox speech recognition model from `stt-rt-v5` to `stt-rt-v6`. According to Soniox, v6 improves real-time translation accuracy (including numbers, dates and amounts), language switching within a sentence, and how well your registered terms are used. `stt-rt-v5` will be removed on 2026-12-15; after that, requests are forwarded to v6 automatically (#15)
+
+**Updating**
+
+- Follow "Updating to a new version" in the README with `v1.1.0`. The only change to how the app works is one line in `public/app.js`
+- Even without updating, the app runs on v6 from 2026-12-15
+
 ## v1.0.1 — 2026-10-15
 
 不具合の修正版です。設定（変数とシークレット）の変更は要りません。 / Bug fix release. No settings (variables and secrets) need to change.
