@@ -150,7 +150,7 @@ async function api(path, body) {
 function sonioxConfig(apiKey) {
   return {
     api_key: apiKey,
-    model: "stt-rt-v5",
+    model: "stt-rt-v6",
     ...audio.pipe.codec.soniox, // 音声の形式（圧縮の方式による）
     language_hints: [session.pair.me, session.pair.partner],
     enable_language_identification: true,
