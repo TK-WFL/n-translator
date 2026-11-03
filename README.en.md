@@ -270,16 +270,16 @@ Add these in Cloudflare → **Settings** → **Variables and Secrets**, as type 
 
 ## Updating to a new version
 
-Pull a new version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically. Use a version (tag) listed under [Releases](https://github.com/TK-WFL/n-translator/releases) and review the changes before you pull them (replace `v1.0.1` below with that version). You need git and a GitHub login that can push.
+Pull a new version into the repository Cloudflare created in your GitHub account in step 3; Cloudflare redeploys automatically. Use a version (tag) listed under [Releases](https://github.com/TK-WFL/n-translator/releases) and review the changes before you pull them (replace `v1.1.0` below with that version). You need git and a GitHub login that can push.
 
 ```bash
 git clone https://github.com/<your-account>/<created-repository>.git
 cd <created-repository>
-git fetch https://github.com/TK-WFL/n-translator.git refs/tags/v1.0.1
+git fetch https://github.com/TK-WFL/n-translator.git refs/tags/v1.1.0
 git diff --stat HEAD FETCH_HEAD          # see which files change
 git diff HEAD FETCH_HEAD -- wrangler.jsonc   # config changes (apply by hand, see below)
 git checkout FETCH_HEAD -- . ':(exclude)wrangler.jsonc' ':(exclude).github'
-git commit -m "Update N-Translator to v1.0.1"
+git commit -m "Update N-Translator to v1.1.0"
 git push
 ```
 
