@@ -41,3 +41,10 @@ test("用語欄の書き方を読み取る", () => {
 test("Soniox の文脈の上限（約1万文字）に十分おさまる", () => {
   assert.ok(JSON.stringify(buildContext("")).length < 3000);
 });
+
+test("用語：「= English」のように左側がない行は使わない（空の語を Soniox に送らない）", () => {
+  assert.deepEqual(parseTerms("= foo\n山田\n =\nA = B"), {
+    terms: ["山田", "A"],
+    translation_terms: [{ source: "A", target: "B" }],
+  });
+});
