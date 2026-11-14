@@ -1,5 +1,57 @@
 # Changelog
 
+## v1.1.1 — 2026-11-14
+
+不具合とセキュリティの点検を受けた修正版です。設定（変数とシークレット）の変更は要りません。 / Fixes from a bug and security review. No settings (variables and secrets) need to change.
+
+### 日本語
+
+**直したこと**
+
+- 電波が弱く、接続の応答が返ってこないと「接続中…」「再接続中…」のまま止まり続けていた（3分で一時停止する仕組みも働かなかった）。1回の試みを15秒で打ち切ってつなぎ直す
+- Notion が応答しないと「終了」が「保存中…」のまま止まり、ほかの書き込みもすべて止まっていた。Notion の応答待ちは15秒で打ち切り、「終了」は45秒で待つのをやめて知らせる
+- 前の人の発言の訳が、次の人が話し始めてから届くと、次の人の発言に付いていた
+- 2列・対面の表示で、選んだ2つの言語以外（または言語が分からない）の発言が出なかった
+- Notion で「長さ（分）」などの列の名前を変えると、長さと発言数を書けなくなっていた
+- 「Notionページを準備」を続けて2回押すと、説明とボタンが2つできていた
+- つなぎ直した直後に「5分間声が聞こえなかった」で一時停止することがあった
+- マイクの許可を待つ間に「終了」→「新しく開始」をすると、新しい会話が始まらないことがあった
+- 用語欄の「= English」のように左側がない行で、空の語を Soniox に送っていた
+- まだ発言がないまま3分つながらなかったときの案内を、実際の動き（待機中に戻る）に合わせた
+
+**セキュリティ**（点検で深刻な問題は見つかっていません。どれも影響は小さいものです）
+
+- ほかのサイトの枠の中で開かれた `?demo` は、設定を読まず Notion にも書かない
+- ローカルで動かす `server.mjs` は、`localhost` / `127.0.0.1` 以外の名前あての要求を断る（DNS リバインディングの予防）
+
+**更新のしかた**
+
+- README の「新しい版に更新する」の手順で `v1.1.1` を取り込みます
+
+### English
+
+**Fixes**
+
+- On a weak connection, a connection attempt that never answered left the app stuck at 「接続中…」/「再接続中…」 (connecting/reconnecting), and the 3-minute pause never kicked in. Each attempt now gives up after 15 seconds and reconnects
+- If Notion stopped answering, 「終了」 (end) stayed at 「保存中…」 (saving) and every other write stalled. Waiting for Notion now gives up after 15 seconds, and ending stops waiting after 45 seconds and tells you
+- A previous speaker's translation that arrived after the next person started speaking was attached to the next person's utterance
+- In the two-column and face-to-face views, utterances in a language other than the selected two (or of unknown language) weren't shown
+- Renaming a column such as 「長さ（分）」 in Notion stopped the length and utterance count from being saved
+- Tapping 「Notionページを準備」 (prepare Notion page) twice in a row created the guide and button twice
+- Right after reconnecting, the app could pause with "no voice for 5 minutes"
+- Ending and starting again while the microphone permission prompt was open could fail to start the new conversation
+- A line such as 「= English」 with nothing on the left of the terms field sent an empty term to Soniox
+- With no utterances yet, the message after 3 minutes without a connection now matches what happens (the app returns to idle)
+
+**Security** (the review found no serious issues; these are all low impact)
+
+- `?demo` opened inside another site's frame no longer loads settings or writes to Notion
+- The local `server.mjs` rejects requests addressed to names other than `localhost` / `127.0.0.1` (DNS rebinding)
+
+**Updating**
+
+- Follow "Updating to a new version" in the README with `v1.1.1`
+
 ## v1.1.0 — 2026-11-04
 
 Soniox の新しい音声認識モデル（STT v6）に切り替えた版です。設定（変数とシークレット）の変更は要りません。 / Switches to Soniox's new speech recognition model (STT v6). No settings (variables and secrets) need to change.
