@@ -11,7 +11,8 @@ const SONIOX_WS = "wss://stt-rt.soniox.com/transcribe-websocket";
 const params = new URLSearchParams(location.search);
 const DEMO = params.has("demo");
 // Notion の埋め込み枠ではマイクが許可されないので、別画面を開くボタンだけ出す
-const EMBEDDED = window.self !== window.top && !DEMO;
+const FRAMED = window.self !== window.top;
+const EMBEDDED = FRAMED && !DEMO;
 // 声が聞こえない状態がこれだけ続いたら一時停止する（?silence=秒 で変えられる）
 const SILENCE_MS = (Number(params.get("silence")) || 300) * 1000;
 // スマホは画面を離れると録音が止まるので、離れた時点で一時停止にする
@@ -1230,7 +1231,8 @@ if (EMBEDDED) {
   renderRecord();
 
   try {
-    await loadConfig();
+    // ほかのサイトの枠の中で開かれたデモは、画面だけ動かす（押し間違いを誘われても Notion に書かない）
+    if (!(FRAMED && DEMO)) await loadConfig();
     if (!cfg.soniox && !DEMO) {
       showNotice("SONIOX_API_KEY が設定されていません（Cloudflare の Worker の設定 →「変数とシークレット」、ローカルは .env）。キーなしで画面を試すなら ?demo を付けて開いてください。");
     }

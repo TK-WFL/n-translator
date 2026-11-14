@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT || 8787);
 // URL の形にそろえる（80番のときは「:80」が付かない）
 const ORIGIN = new URL(`http://localhost:${PORT}`).origin;
 const ALLOWED_ORIGINS = [ORIGIN, new URL(`http://127.0.0.1:${PORT}`).origin];
+const ALLOWED_HOSTS = ALLOWED_ORIGINS.map((origin) => new URL(origin).host);
 // Cloudflare と同じセキュリティ用のヘッダー（public/_headers の「/*」の分）を付ける
 const SECURITY_HEADERS = readHeaders(join(PUBLIC, "_headers"));
 
@@ -89,7 +90,8 @@ const server = http.createServer(async (req, res) => {
   try {
     url = new URL(req.url, ORIGIN);
   } catch {}
-  if (!req.url.startsWith("/") || url?.origin !== ORIGIN) {
+  // Host が自分の名前でない要求も受け付けない（ほかのサイトの名前をこのパソコンに向ける手口＝DNS リバインディングの対策）
+  if (!req.url.startsWith("/") || url?.origin !== ORIGIN || !ALLOWED_HOSTS.includes(req.headers.host)) {
     res.writeHead(400).end();
     return;
   }
