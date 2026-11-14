@@ -23,6 +23,8 @@ const CODEC = params.get("codec");
 const MAX_OUTAGE_MS = 3 * 60 * 1000;
 // 接続の1回の試みを待つ長さ。電波が弱いと応答が返らないまま止まることがあるので、打ち切ってつなぎ直す
 const CONNECT_TIMEOUT_MS = 15000;
+// 「終了」のときに Notion への保存を待つ長さ
+const SAVE_TIMEOUT_MS = 45000;
 
 const ICON = {
   pause: `<svg class="ico fill" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".8"/><rect x="9.4" y="3" width="2.6" height="10" rx=".8"/></svg>`,
@@ -230,9 +232,16 @@ async function beginStreaming() {
   // iPhone ではタップの直後（await より前）に作らないと音声を扱えない
   const ctx = new AudioContext();
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
+    const media = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 },
     });
+    if (id !== gen) {
+      // マイクの許可を待っている間に終了された（新しく開始した会話のマイクには触らない）
+      media.getTracks().forEach((t) => t.stop());
+      ctx.close().catch(() => {});
+      return;
+    }
+    stream = media;
     await startAudio(ctx);
   } catch (e) {
     ctx.close().catch(() => {});
@@ -398,7 +407,11 @@ function scheduleReconnect(id) {
   if (id !== gen || !["connecting", "live", "reconnecting"].includes(state)) return;
   outageSince ??= Date.now();
   if (Date.now() - outageSince > MAX_OUTAGE_MS) {
-    fail("3分以上つながらなかったため一時停止しました。電波の良い場所で「再開」してください。");
+    fail(
+      session?.turns.list.length
+        ? "3分以上つながらなかったため一時停止しました。電波の良い場所で「再開」してください。"
+        : "3分以上つながらなかったため止めました。電波の良い場所で、もう一度「翻訳を開始」を押してください。",
+    );
     return;
   }
   setState("reconnecting");
@@ -478,8 +491,13 @@ async function end() {
   setState("ending");
   if (streaming) await stopStreaming();
   retryFailedTurn(session);
-  await notionSettled(); // 最後の発言（と書き込めなかった発言）がNotionに書き込まれるのを待つ
-  await saveStats();
+  // 最後の発言（と書き込めなかった発言）がNotionに書き込まれるのを待つ。Notion が応答しないときは待ち続けない
+  const s = session;
+  const saved = await Promise.race([
+    notionSettled().then(saveStats).then(() => true),
+    new Promise((r) => setTimeout(r, SAVE_TIMEOUT_MS, false)),
+  ]);
+  if (!saved) notifyOnce(s, "Notion への保存が終わりませんでした。Notion のページで、最後の発言まで記録されているか確かめてください。");
   setState("ended");
   renderRecord();
 }
@@ -878,7 +896,6 @@ function renderColumns(items) {
   const face = settings.view === "face";
   const pair = currentPair();
   for (const role of ROLES) {
-    const lang = pair[role];
     const list = cols[role].querySelector(".col-list");
     const nodes = colNodes[role];
     stick(
@@ -886,7 +903,8 @@ function renderColumns(items) {
         const seen = new Set();
         let prev = null;
         for (const item of items) {
-          const own = item.lang === lang;
+          const speaker = !item.lang || item.lang === pair.me ? "me" : "partner";
+          const own = role === speaker;
           const [text, nf] = own ? [item.orig, item.origNf] : [item.trans, item.transNf];
           if (!text && !nf) continue;
           seen.add(item.id);

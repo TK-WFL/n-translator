@@ -68,3 +68,19 @@ test("デモの台本が原文と訳文のペアに分かれ、一時停止し�
   ]);
   assert.equal(new Set(rows.map((r) => r[1])).size, rows.length); // 同じ行が二重に入らない
 });
+
+test("前の人の発言の訳が、次の人が話し始めてから届いても、前の発言に付ける", () => {
+  const settled = [];
+  const s = new Segmenter({ settleMs: 1, onSettle: (seg) => settled.push(seg.id) });
+  const tok = (text, language, translation_status = "original") => ({ text, is_final: true, language, translation_status });
+  s.handle({ tokens: [tok("はじめまして。", "ja"), { text: "<end>", is_final: true }] });
+  s.handle({ tokens: [tok("Hello.", "en")] }); // 相手が話し始める
+  s.handle({ tokens: [tok("Nice to meet you.", "en", "translation")] }); // 前の発言（日本語）の訳が遅れて届く
+  s.handle({ tokens: [tok("こんにちは。", "ja", "translation")] }); // いまの発言（英語）の訳
+  s.flush();
+  assert.deepEqual(s.segments.map((x) => [x.lang, x.orig, x.trans]), [
+    ["ja", "はじめまして。", "Nice to meet you."],
+    ["en", "Hello.", "こんにちは。"],
+  ]);
+  assert.ok(settled.includes(1)); // 訳が付いた前の発言も、もう一度 Notion に送られる
+});

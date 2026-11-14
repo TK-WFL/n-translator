@@ -41,8 +41,9 @@ export class Segmenter {
       }
 
       if (isTranslation) {
-        // 訳文は直近の発話に付ける（区切り後に遅れて来た分も含む）
-        const seg = this.current ?? this._create(null);
+        // 訳文は直近の発話に付ける（区切り後に遅れて来た分も含む）。
+        // 訳文の言語が直近の発話の言語と同じなら、その前の人の発言の訳が遅れて届いたもの
+        const seg = this._translated(t.language) ?? this._create(null);
         seg.trans += t.text;
         seg.transLang ??= t.language ?? null;
         if (seg.ended) this._schedule(seg);
@@ -79,6 +80,15 @@ export class Segmenter {
       }
     }
     this.onChange();
+  }
+
+  _translated(transLang) {
+    const cur = this.current;
+    if (!cur || !transLang || !cur.lang || cur.lang !== transLang) return cur;
+    for (let i = this.segments.length - 2; i >= 0; i--) {
+      if (this.segments[i].lang && this.segments[i].lang !== transLang) return this.segments[i];
+    }
+    return cur;
   }
 
   _create(lang) {

@@ -597,3 +597,77 @@ test("本文が null・配列・文字列でも 500 にせず、形式の誤り�
     assert.equal(res.status, 400, body);
   }
 });
+
+test("Notion が応答しないときは待ち続けず、1回やり直してからエラーを返す（後ろの書き込みを止めない）", async () => {
+  resetNotionCache();
+  const original = globalThis.fetch;
+  let hung = 0;
+  const keepAlive = setInterval(() => {}, 1000); // 打ち切りのタイマーだけでは Node が待たずに終わるため
+  globalThis.fetch = (url, init) => {
+    if (init.method === "PATCH" && hung < 2) {
+      hung++;
+      return new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason)));
+    }
+    return Promise.resolve(new Response(JSON.stringify({ results: [{ id: BLOCK }] }), { status: 200 }));
+  };
+  try {
+    const slowEnv = { ...env, NOTION_TIMEOUT_MS: "50" };
+    const u = { pageId: S.PAGE, lang: "ja", orig: "はい", trans: "", time: "", primary: "ja" };
+    const res = await handleApi(req("/api/notion/utterance", { body: u }), slowEnv, opts);
+    assert.equal(res.status, 504);
+    assert.equal(hung, 2);
+    // 次の書き込みは通る
+    assert.equal((await handleApi(req("/api/notion/utterance", { body: u }), slowEnv, opts)).status, 200);
+  } finally {
+    clearInterval(keepAlive);
+    globalThis.fetch = original;
+  }
+});
+
+test("一時停止・終了：覚えたあとで列の名前が変えられていたら、列を読み直して書き込む", async () => {
+  let renamed = false;
+  await withNotion(
+    {
+      db: "db-1",
+      override: (c) => {
+        if (c.method === "GET" && c.path.startsWith("/databases/")) {
+          return [200, { properties: renamed ? { 名前: { type: "title" }, 発言数: { type: "number" } } : DEFAULT_PROPS }];
+        }
+        if (c.method === "PATCH" && c.path === `/pages/${PAGE}` && c.body.properties["長さ（分）"]) {
+          return [400, { message: "長さ（分） is not a property that exists." }];
+        }
+        return null;
+      },
+    },
+    async (calls) => {
+      await call("/api/notion/session", { title: "会話" }); // 列を覚える
+      renamed = true;
+      const res = await call("/api/notion/session/update", { pageId: S.PAGE, minutes: 3, count: 5 });
+      assert.equal(res.status, 200);
+      assert.deepEqual(calls.at(-1).body.properties, { 発言数: { number: 5 } });
+    },
+  );
+});
+
+test("Notionページを準備：続けて2回押されても、説明とボタンを2つ作らない", async () => {
+  resetNotionCache();
+  let embed = false;
+  const m = mockFetch((c) => {
+    if (c.method === "GET" && c.path.startsWith(`/blocks/${PARENT}/children`)) {
+      return [200, { results: embed ? [{ id: "e1", type: "embed", embed: { url: `${ORIGIN}/` } }, { id: "db-1", type: "child_database", child_database: { title: "翻訳ログ" } }] : [{ id: "db-1", type: "child_database", child_database: { title: "翻訳ログ" } }], has_more: false }];
+    }
+    if (c.method === "PATCH" && c.path === `/blocks/${PARENT}/children`) {
+      embed = true;
+      return [200, { results: [{ id: "c1" }, { id: "e1" }] }];
+    }
+    return [200, {}];
+  });
+  try {
+    const [a, b] = await Promise.all([call("/api/notion/setup", {}), call("/api/notion/setup", {})]);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+    assert.equal(m.calls.filter((c) => c.method === "PATCH").length, 1);
+  } finally {
+    m.restore();
+  }
+});
