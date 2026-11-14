@@ -76,6 +76,7 @@ export function parseTerms(text) {
   const translation_terms = [];
   for (const line of text.split("\n").map((l) => l.trim()).filter(Boolean)) {
     const [source, target] = line.split(/\s*=\s*/);
+    if (!source) continue; // 「= English」のように左側がない行
     terms.push(source);
     if (target) translation_terms.push({ source, target });
   }

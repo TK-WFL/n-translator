@@ -20,6 +20,8 @@ const PAUSE_WHEN_HIDDEN = matchMedia("(pointer: coarse)").matches;
 const CODEC = params.get("codec");
 // 電波が途切れても、この時間まではつなぎ直しを続ける
 const MAX_OUTAGE_MS = 3 * 60 * 1000;
+// 接続の1回の試みを待つ長さ。電波が弱いと応答が返らないまま止まることがあるので、打ち切ってつなぎ直す
+const CONNECT_TIMEOUT_MS = 15000;
 
 const ICON = {
   pause: `<svg class="ico fill" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".8"/><rect x="9.4" y="3" width="2.6" height="10" rx=".8"/></svg>`,
@@ -135,10 +137,12 @@ let droppedNoticed = 0;
 let notionQueue = Promise.resolve();
 
 // ---- 接続 ------------------------------------------------------------------
-async function api(path, body) {
+async function api(path, body, { timeoutMs } = {}) {
   const headers = { "X-Access-Key": ACCESS_KEY };
-  const res = await fetch(path, body === undefined ? { headers } : {
+  const signal = timeoutMs ? AbortSignal.timeout?.(timeoutMs) : undefined;
+  const res = await fetch(path, body === undefined ? { headers, signal } : {
     method: "POST",
+    signal,
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -318,7 +322,7 @@ function stopTracks() {
 async function connect(id) {
   let apiKey;
   try {
-    ({ api_key: apiKey } = await api("/api/soniox-key", {}));
+    ({ api_key: apiKey } = await api("/api/soniox-key", {}, { timeoutMs: CONNECT_TIMEOUT_MS }));
   } catch (e) {
     if (id !== gen) return;
     // キーが違う・Soniox の残高が足りない（424）など、つなぎ直しても直らない失敗はすぐ止める。通信の失敗はつなぎ直す
@@ -330,12 +334,19 @@ async function connect(id) {
 
   const socket = new WebSocket(SONIOX_WS);
   ws = socket;
+  // つながらないまま止まったら閉じる（onclose からつなぎ直す）
+  const opening = setTimeout(() => socket.close(), CONNECT_TIMEOUT_MS);
 
   socket.onopen = () => {
+    clearTimeout(opening);
     socket.send(JSON.stringify(sonioxConfig(apiKey)));
     socket.configured = true;
     audio?.pipe?.uplink.attach(socket); // ここから音声を流す（切れている間にためた分から）
-    if (id === gen) setState("live");
+    if (id === gen) {
+      // つなぎ直したときは、切れていた時間を「声が聞こえなかった時間」に数えない
+      if (state === "reconnecting") lastVoiceAt = Date.now();
+      setState("live");
+    }
   };
 
   socket.onmessage = (e) => {
@@ -371,6 +382,7 @@ async function connect(id) {
   };
 
   socket.onclose = () => {
+    clearTimeout(opening);
     socket.onFinished?.();
     if (ws !== socket || socket.stopping) return;
     ws = null;

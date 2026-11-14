@@ -582,3 +582,18 @@ test("Notionページを準備：NOTION_DATABASE のデータベースを開け�
     m.restore();
   }
 });
+
+test("本文が null・配列・文字列でも 500 にせず、形式の誤りとして返す", async () => {
+  for (const body of ["null", "[]", '"x"', "5", "{"]) {
+    const res = await handleApi(
+      new Request(ORIGIN + "/api/notion/utterance", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: ORIGIN, "x-access-key": "k123" },
+        body,
+      }),
+      env,
+      opts,
+    );
+    assert.equal(res.status, 400, body);
+  }
+});
